@@ -12,12 +12,10 @@ export const contentType = 'image/png'
 
 // Image generation
 export default async function Image() {
-    // Read the icon file from the app directory
-    // In production, we need to be careful with paths, but for NodeJS runtime
-    // process.cwd() usually works fine in Next.js
-    const iconPath = join(process.cwd(), 'app/icon.png')
+    // Use readFile with import.meta.url to resolve the path relative to this file
+    // This works better than fetch() for local files during build
+    const iconPath = new URL('./icon.png', import.meta.url)
     const iconData = await readFile(iconPath)
-    const iconSrc = Uint8Array.from(iconData)
 
     return new ImageResponse(
         (
@@ -61,16 +59,16 @@ export default async function Image() {
                     }}
                 >
                     {/* Logo / Icon */}
-                    {/* Note: In ImageResponse, we can use ArrayBuffer or base64 for src */}
                     <img
                         // @ts-ignore
                         src={iconData.buffer}
-                        width="200"
-                        height="200"
+                        width={200}
+                        height={200}
                         style={{
                             borderRadius: '30px',
                             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                            border: '4px solid rgba(255,255,255,0.1)'
+                            border: '4px solid rgba(255,255,255,0.1)',
+                            objectFit: 'cover'
                         }}
                     />
 
