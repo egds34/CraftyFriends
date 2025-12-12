@@ -32,7 +32,7 @@ export default async function AdminDashboardPage() {
                                 </tr>
                             </thead>
                             <tbody className="[&_tr:last-child]:border-0">
-                                {users.map((user) => (
+                                {users.map((user: any) => (
                                     <tr key={user.id} className="border-b transition-colors hover:bg-muted/50">
                                         <td className="p-4 align-middle">{user.email}</td>
                                         <td className="p-4 align-middle">

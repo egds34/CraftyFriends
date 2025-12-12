@@ -93,13 +93,10 @@ export async function POST(req: Request) {
 
         if (typeof subscription.latest_invoice === 'object' && subscription.latest_invoice !== null) {
             console.log("[CREATE_SUBSCRIPTION] Invoice status:", subscription.latest_invoice.status)
-            console.log("[CREATE_SUBSCRIPTION] Payment intent type:", typeof subscription.latest_invoice.payment_intent)
-            console.log("[CREATE_SUBSCRIPTION] Payment intent value:", subscription.latest_invoice.payment_intent)
         }
 
         console.log("[CREATE_SUBSCRIPTION] Subscription created:", subscription.id)
         console.log("[CREATE_SUBSCRIPTION] Latest invoice:", typeof subscription.latest_invoice)
-        console.log("[CREATE_SUBSCRIPTION] Payment intent:", typeof subscription.latest_invoice?.payment_intent)
 
         // Explicitly fetch the invoice if it's not expanded
         let clientSecret: string | null = null
