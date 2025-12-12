@@ -1,6 +1,8 @@
 import { ImageResponse } from 'next/og'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 // Route segment config
 export const runtime = 'nodejs'
@@ -14,7 +16,8 @@ export const contentType = 'image/png'
 export default async function Image() {
     // Use readFile with import.meta.url to resolve the path relative to this file
     // This works better than fetch() for local files during build
-    const iconPath = new URL('./icon.png', import.meta.url)
+    const __dirname = dirname(fileURLToPath(import.meta.url))
+    const iconPath = join(__dirname, 'icon.png')
     const iconData = await readFile(iconPath)
 
     return new ImageResponse(
@@ -61,7 +64,7 @@ export default async function Image() {
                     {/* Logo / Icon */}
                     <img
                         // @ts-ignore
-                        src={iconData.buffer}
+                        src={iconData}
                         width={200}
                         height={200}
                         style={{
