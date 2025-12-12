@@ -1,9 +1,8 @@
 import { ImageResponse } from 'next/og'
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 
 // Route segment config
 export const runtime = 'nodejs'
+// export const alt = 'Crafty Friends Server' 
 export const size = {
     width: 1200,
     height: 630,
@@ -12,12 +11,9 @@ export const contentType = 'image/png'
 
 // Image generation
 export default async function Image() {
-    // Read the icon file from the app directory
-    // In production, we need to be careful with paths, but for NodeJS runtime
-    // process.cwd() usually works fine in Next.js
-    const iconPath = join(process.cwd(), 'app/icon.png')
-    const iconData = await readFile(iconPath)
-    const iconSrc = Uint8Array.from(iconData)
+    // Use fetch with import.meta.url to correctly resolve the bundled asset path in Vercel
+    const iconUrl = new URL('./icon.png', import.meta.url)
+    const iconData = await fetch(iconUrl).then((res) => res.arrayBuffer())
 
     return new ImageResponse(
         (
@@ -61,16 +57,16 @@ export default async function Image() {
                     }}
                 >
                     {/* Logo / Icon */}
-                    {/* Note: In ImageResponse, we can use ArrayBuffer or base64 for src */}
                     <img
                         // @ts-ignore
-                        src={iconData.buffer}
-                        width="200"
-                        height="200"
+                        src={iconData}
+                        width={200}
+                        height={200}
                         style={{
                             borderRadius: '30px',
                             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                            border: '4px solid rgba(255,255,255,0.1)'
+                            border: '4px solid rgba(255,255,255,0.1)',
+                            objectFit: 'cover'
                         }}
                     />
 
