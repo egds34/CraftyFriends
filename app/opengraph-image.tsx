@@ -1,8 +1,9 @@
 import { ImageResponse } from 'next/og'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 
 // Route segment config
 export const runtime = 'nodejs'
-// export const alt = 'Crafty Friends Server' 
 export const size = {
     width: 1200,
     height: 630,
@@ -11,9 +12,10 @@ export const contentType = 'image/png'
 
 // Image generation
 export default async function Image() {
-    // Use fetch with import.meta.url to correctly resolve the bundled asset path in Vercel
-    const iconUrl = new URL('./icon.png', import.meta.url)
-    const iconData = await fetch(iconUrl).then((res) => res.arrayBuffer())
+    // Use readFile with import.meta.url to resolve the path relative to this file
+    // This works better than fetch() for local files during build
+    const iconPath = new URL('./icon.png', import.meta.url)
+    const iconData = await readFile(iconPath)
 
     return new ImageResponse(
         (
@@ -59,7 +61,7 @@ export default async function Image() {
                     {/* Logo / Icon */}
                     <img
                         // @ts-ignore
-                        src={iconData}
+                        src={iconData.buffer}
                         width={200}
                         height={200}
                         style={{
