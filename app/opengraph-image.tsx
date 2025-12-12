@@ -1,8 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 
 // Route segment config
 export const runtime = 'nodejs'
@@ -14,15 +13,16 @@ export const contentType = 'image/png'
 
 // Image generation
 export default async function Image() {
-    // Use readFile with import.meta.url to resolve the path relative to this file
-    // This works better than fetch() for local files during build
+    // Convert import.meta.url to a proper file path
     const __dirname = dirname(fileURLToPath(import.meta.url))
     const iconPath = join(__dirname, 'icon.png')
     const iconData = await readFile(iconPath)
 
+    // Convert buffer to base64 data URL
+    const base64Image = `data:image/png;base64,${iconData.toString('base64')}`
+
     return new ImageResponse(
         (
-            // ImageResponse JSX element
             <div
                 style={{
                     fontSize: 128,
@@ -49,7 +49,6 @@ export default async function Image() {
                         backgroundSize: '50px 50px',
                     }}
                 />
-
                 {/* Content Container */}
                 <div
                     style={{
@@ -63,8 +62,7 @@ export default async function Image() {
                 >
                     {/* Logo / Icon */}
                     <img
-                        // @ts-ignore
-                        src={iconData}
+                        src={base64Image}
                         width={200}
                         height={200}
                         style={{
@@ -74,7 +72,6 @@ export default async function Image() {
                             objectFit: 'cover'
                         }}
                     />
-
                     {/* Title */}
                     <div
                         style={{
@@ -88,14 +85,11 @@ export default async function Image() {
                         </div>
                     </div>
                 </div>
-
-                {/* Decorative corner accents for "cutsie/classy" feel */}
+                {/* Decorative corner accents */}
                 <div style={{ position: 'absolute', top: 40, left: 40, width: 20, height: 20, borderRadius: '50%', background: '#F472B6', opacity: 0.6 }} />
                 <div style={{ position: 'absolute', bottom: 40, right: 40, width: 30, height: 30, borderRadius: '50%', background: '#38BDF8', opacity: 0.6 }} />
-
             </div>
         ),
-        // ImageResponse options
         {
             ...size,
         }
