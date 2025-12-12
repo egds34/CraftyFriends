@@ -15,8 +15,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'),
   title: "Crafty Friends",
-  description: "Created by banjomonkey430 and CuteBirdyParrot",
+  description: "A Minecraft server created by banjomonkey420",
+  openGraph: {
+    title: "Crafty Friends",
+    description: "Join our premium community today.",
+    url: '/',
+    siteName: 'Crafty Friends',
+    locale: 'en_US',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({
