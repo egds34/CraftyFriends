@@ -342,31 +342,28 @@ export function ServerMetrics() {
     }
 
     return (
-        <section className="py-20 bg-black/40 border-y border-white/5 backdrop-blur-sm">
+        <section className="py-20 bg-muted/30 backdrop-blur-sm">
             <div className="container mx-auto px-4 max-w-7xl">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="mb-12 flex flex-col md:flex-row justify-between items-end gap-6"
+                    className="mb-12 flex flex-col items-center justify-center gap-6 text-center"
                 >
-                    <div>
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent inline-block">
-                            Live Server Statistics
-                        </h2>
-                        <p className="text-zinc-400">Real-time performance metrics from our game servers.</p>
-                    </div>
+                    <h2 className="text-3xl md:text-5xl font-extrabold text-primary tracking-tight">
+                        Server Statistics
+                    </h2>
 
-                    <div className="flex bg-zinc-900/50 p-1 rounded-lg border border-zinc-800 backdrop-blur-md">
+                    <div className="flex bg-card/50 p-1 rounded-xl border border-primary/10 backdrop-blur-md shadow-sm">
                         {(['1m', '1h', '24h'] as const).map((range) => (
                             <button
                                 key={range}
                                 onClick={() => setTimeRange(range)}
                                 className={`
-                                    px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-300
+                                    px-4 py-1.5 text-sm font-bold rounded-lg transition-all duration-300
                                     ${timeRange === range
-                                        ? 'bg-zinc-700 text-white shadow-sm'
-                                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'}
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}
                                 `}
                             >
                                 {range}
@@ -377,182 +374,222 @@ export function ServerMetrics() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {/* UI Cards same as before... */}
-                    <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-md flex flex-col justify-center items-center py-6">
-                        <CardHeader className="pb-2 p-0 text-center">
-                            <CardTitle className="text-zinc-400 text-sm font-medium uppercase tracking-wider">Server Status</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0 mt-4 text-center">
-                            <div className="flex items-center justify-center gap-3">
-                                <div className={`w-4 h-4 rounded-full ${displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-red-500'} `}></div>
-                                <span className={`text-4xl font-bold ${displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? 'text-emerald-400' : 'text-red-500'} `}>
-                                    {displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? 'ONLINE' : 'OFFLINE'}
-                                </span>
-                            </div>
-                            <div className="flex flex-col gap-1 mt-2">
-                                <p className="text-zinc-500 text-xs text-zinc-400">
-                                    Uptime: {(() => {
-                                        const start = Number(displayLatest.startTime);
-                                        if (start <= 0 || displayLatest.status === 'OFFLINE' || displayLatest.status === 'shutdown') return 'Unknown';
-                                        const diff = Math.max(0, now - start);
-                                        const hours = Math.floor(diff / (1000 * 60 * 60));
-                                        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                                        return `${hours}h ${minutes}m`;
-                                    })()}
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <motion.div
+                        className="h-full"
+                        initial={{ opacity: 0, y: 40 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-100px" }}
+                        transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98], delay: 0 }}
+                    >
+                        <Card className="bg-card/50 border-primary/10 hover:border-primary/20 transition-colors backdrop-blur-sm shadow-sm hover:shadow-md flex flex-col justify-center items-center py-6 h-full rounded-2xl">
+                            <CardHeader className="pb-2 p-0 text-center">
+                                <CardTitle className="text-primary/80 text-sm font-semibold tracking-wide uppercase">Server Status</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0 mt-4 text-center">
+                                <div className="flex items-center justify-center gap-3">
+                                    <div className={`w-4 h-4 rounded-full ${displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? 'bg-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.5)]' : 'bg-red-400'} `}></div>
+                                    <span className={`text-4xl font-bold ${displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? 'text-emerald-500' : 'text-red-500'} `}>
+                                        {displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? 'ONLINE' : 'OFFLINE'}
+                                    </span>
+                                </div>
+                                <div className="flex flex-col gap-1 mt-2">
+                                    <p className="text-muted-foreground text-xs font-medium">
+                                        Uptime: {(() => {
+                                            const start = Number(displayLatest.startTime);
+                                            if (start <= 0 || displayLatest.status === 'OFFLINE' || displayLatest.status === 'shutdown') return 'Unknown';
+                                            const diff = Math.max(0, now - start);
+                                            const hours = Math.floor(diff / (1000 * 60 * 60));
+                                            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                            return `${hours}h ${minutes}m`;
+                                        })()}
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
 
-                    <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-md">
-                        <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-zinc-400 text-sm font-medium uppercase tracking-wider">CPU Load</CardTitle>
-                            <span className="text-xs text-zinc-500 font-mono">Peak: {peaks.cpu.toFixed(1)}%</span>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-baseline gap-2 mb-2">
-                                <span className="text-4xl font-bold text-cyan-400">{displayLatest.cpuUsage.toFixed(1)}%</span>
-                            </div>
-                            <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden mt-4">
-                                <div
-                                    className="h-full bg-gradient-to-r from-cyan-600 to-blue-400 transition-all duration-500"
-                                    style={{ width: `${Math.min(displayLatest.cpuUsage, 100)}% ` }}
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <motion.div
+                        className="h-full"
+                        initial={{ opacity: 0, y: 40 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-100px" }}
+                        transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98], delay: 0.1 }}
+                    >
+                        <Card className="bg-card/50 border-primary/10 hover:border-primary/20 transition-colors backdrop-blur-sm shadow-sm hover:shadow-md h-full rounded-2xl">
+                            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+                                <CardTitle className="text-primary/80 text-sm font-semibold tracking-wide uppercase">CPU Load</CardTitle>
+                                <span className="text-xs text-muted-foreground font-mono">Peak: {peaks.cpu.toFixed(1)}%</span>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex items-baseline gap-2 mb-2">
+                                    <span className="text-4xl font-bold text-purple-500">{displayLatest.cpuUsage.toFixed(1)}%</span>
+                                </div>
+                                <div className="h-3 w-full bg-secondary rounded-full overflow-hidden mt-4">
+                                    <div
+                                        className="h-full bg-gradient-to-r from-purple-400 to-pink-300 transition-all duration-500 rounded-full"
+                                        style={{ width: `${Math.min(displayLatest.cpuUsage, 100)}% ` }}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
 
-                    <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-md lg:col-span-2">
-                        <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-zinc-400 text-sm font-medium uppercase tracking-wider">RAM Usage</CardTitle>
-                            <span className="text-xs text-zinc-500 font-mono">Peak: {(peaks.ram / 1024 / 1024 / 1024).toFixed(1)} GB</span>
-                        </CardHeader>
-                        <CardContent className="relative">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <div className="flex items-baseline gap-2 mb-2">
-                                        <span className="text-4xl font-bold text-violet-400">{usedGB}</span>
-                                        <span className="text-zinc-500 text-sm">GB Used</span>
+                    <motion.div
+                        className="h-full lg:col-span-2"
+                        initial={{ opacity: 0, y: 40 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-100px" }}
+                        transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98], delay: 0.2 }}
+                    >
+                        <Card className="bg-card/50 border-primary/10 hover:border-primary/20 transition-colors backdrop-blur-sm shadow-sm hover:shadow-md h-full rounded-2xl">
+                            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+                                <CardTitle className="text-primary/80 text-sm font-semibold tracking-wide uppercase">RAM Usage</CardTitle>
+                                <span className="text-xs text-muted-foreground font-mono">Peak: {(peaks.ram / 1024 / 1024 / 1024).toFixed(1)} GB</span>
+                            </CardHeader>
+                            <CardContent className="relative">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <div className="flex items-baseline gap-2 mb-2">
+                                            <span className="text-4xl font-bold text-pink-500">{usedGB}</span>
+                                            <span className="text-muted-foreground text-sm font-medium">GB Used</span>
+                                        </div>
+                                        <div className="h-3 w-full bg-secondary rounded-full overflow-hidden mt-4">
+                                            <div
+                                                className="h-full bg-gradient-to-r from-pink-400 to-rose-300 transition-all duration-500 rounded-full"
+                                                style={{ width: `${memPercentage}% ` }}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden mt-4">
-                                        <div
-                                            className="h-full bg-gradient-to-r from-violet-600 to-indigo-400 transition-all duration-500"
-                                            style={{ width: `${memPercentage}% ` }}
-                                        />
+                                    <div className="flex flex-col justify-center items-end">
+                                        <span className="text-2xl font-bold text-foreground/80">{maxGB} GB</span>
+                                        <span className="text-xs text-muted-foreground uppercase font-medium">Total Allocated</span>
                                     </div>
                                 </div>
-                                <div className="flex flex-col justify-center items-end">
-                                    <span className="text-2xl font-bold text-zinc-300">{maxGB} GB</span>
-                                    <span className="text-xs text-zinc-500 uppercase">Total Allocated</span>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
 
-                    <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-md lg:col-span-4">
-                        <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-zinc-400 text-sm font-medium uppercase tracking-wider">TPS (Performance)</CardTitle>
-                            <span className="text-xs text-zinc-500 font-mono">Low: {peaks.tps.toFixed(1)} / Peak: 20.0</span>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-baseline gap-2 mb-4">
-                                <span className={`text-4xl font-bold ${displayLatest.tps > 19 ? 'text-emerald-400' : displayLatest.tps > 15 ? 'text-yellow-400' : 'text-red-500'} `}>
-                                    {displayLatest.tps.toFixed(1)}
-                                </span>
-                                <span className="text-zinc-500 text-sm">/ 20.0</span>
-                            </div>
-                            <div className="h-[150px] w-full mt-2">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={finalChartData}>
-                                        <defs>
-                                            <linearGradient id="colorTps" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#34d399" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <XAxis
-                                            dataKey="timestamp"
-                                            type="number"
-                                            domain={['dataMin', 'dataMax']}
-                                            ticks={ticks}
-                                            tick={<CustomAxisTick showSeconds={timeRange === '1m'} />}
-                                            interval={0}
-                                            tickLine={false}
-                                            axisLine={false}
-                                        />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', color: '#fff' }}
-                                            labelFormatter={(label) => new Date(label).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                        />
-                                        <Area
-                                            animationDuration={500}
-                                            type="monotone"
-                                            dataKey="tps"
-                                            stroke="#34d399"
-                                            fillOpacity={1}
-                                            fill="url(#colorTps)"
-                                            strokeWidth={2}
-                                            connectNulls={true}
-                                        />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <motion.div
+                        className="lg:col-span-4"
+                        initial={{ opacity: 0, y: 40 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-100px" }}
+                        transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98], delay: 0 }}
+                    >
+                        <Card className="bg-card/50 border-primary/10 hover:border-primary/20 transition-colors backdrop-blur-sm shadow-sm hover:shadow-md h-full rounded-2xl">
+                            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+                                <CardTitle className="text-primary/80 text-sm font-semibold tracking-wide uppercase">TPS (Performance)</CardTitle>
+                                <span className="text-xs text-muted-foreground font-mono">Low: {peaks.tps.toFixed(1)} / Peak: 20.0</span>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex items-baseline gap-2 mb-4">
+                                    <span className={`text-4xl font-bold ${displayLatest.tps > 19 ? 'text-emerald-500' : displayLatest.tps > 15 ? 'text-yellow-500' : 'text-red-500'} `}>
+                                        {displayLatest.tps.toFixed(1)}
+                                    </span>
+                                    <span className="text-muted-foreground text-sm font-medium">/ 20.0</span>
+                                </div>
+                                <div className="h-[150px] w-full mt-2">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={finalChartData}>
+                                            <defs>
+                                                <linearGradient id="colorTps" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#a78bfa" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <XAxis
+                                                dataKey="timestamp"
+                                                type="number"
+                                                domain={['dataMin', 'dataMax']}
+                                                ticks={ticks}
+                                                tick={<CustomAxisTick showSeconds={timeRange === '1m'} />}
+                                                interval={0}
+                                                tickLine={false}
+                                                axisLine={false}
+                                            />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: '#e4e4e7', color: '#18181b', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                                                labelFormatter={(label) => new Date(label).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                            />
+                                            <Area
+                                                animationDuration={500}
+                                                type="monotone"
+                                                dataKey="tps"
+                                                stroke="#a78bfa"
+                                                fillOpacity={1}
+                                                fill="url(#colorTps)"
+                                                strokeWidth={3}
+                                                connectNulls={true}
+                                            />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
 
-                    <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-md lg:col-span-4">
-                        <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-zinc-400 text-sm font-medium uppercase tracking-wider">Network Traffic</CardTitle>
-                            <div className="flex gap-4 text-xs text-zinc-500 font-mono">
-                                <span>Peak ↓: {netPeaks.rx} KB/s</span>
-                                <span>Peak ↑: {netPeaks.tx} KB/s</span>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex justify-between text-xs text-zinc-500 mb-2 px-2">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-blue-500/50 border border-blue-500"></div>
-                                    Inbound: {finalChartData.length > 0 ? finalChartData[finalChartData.length - 1].rx : 0} KB/s
+                    <motion.div
+                        className="lg:col-span-4"
+                        initial={{ opacity: 0, y: 40 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-100px" }}
+                        transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98], delay: 0 }}
+                    >
+                        <Card className="bg-card/50 border-primary/10 hover:border-primary/20 transition-colors backdrop-blur-sm shadow-sm hover:shadow-md h-full rounded-2xl">
+                            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+                                <CardTitle className="text-primary/80 text-sm font-semibold tracking-wide uppercase">Network Traffic</CardTitle>
+                                <div className="flex gap-4 text-xs text-muted-foreground font-mono">
+                                    <span>Peak ↓: {netPeaks.rx} KB/s</span>
+                                    <span>Peak ↑: {netPeaks.tx} KB/s</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-pink-500/50 border border-pink-500"></div>
-                                    Outbound: {finalChartData.length > 0 ? finalChartData[finalChartData.length - 1].tx : 0} KB/s
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex justify-between text-xs text-muted-foreground mb-2 px-2 font-medium">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-pink-400 border border-pink-300"></div>
+                                        Inbound: {finalChartData.length > 0 ? finalChartData[finalChartData.length - 1].rx : 0} KB/s
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-sky-400 border border-sky-300"></div>
+                                        Outbound: {finalChartData.length > 0 ? finalChartData[finalChartData.length - 1].tx : 0} KB/s
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="h-[150px] w-full mt-2">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={finalChartData}>
-                                        <defs>
-                                            <linearGradient id="colorRx" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                            </linearGradient>
-                                            <linearGradient id="colorTx" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#ec4899" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#ec4899" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <XAxis
-                                            dataKey="timestamp"
-                                            type="number"
-                                            domain={['dataMin', 'dataMax']}
-                                            ticks={ticks}
-                                            tick={<CustomAxisTick showSeconds={timeRange === '1m'} />}
-                                            interval={0}
-                                            tickLine={false}
-                                            axisLine={false}
-                                        />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', color: '#fff' }}
-                                            itemStyle={{ color: '#fff' }}
-                                            labelFormatter={(label) => new Date(label).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                        />
-                                        <Area animationDuration={500} type="monotone" dataKey="rx" name="Download (KB/s)" stroke="#3b82f6" fillOpacity={1} fill="url(#colorRx)" strokeWidth={2} connectNulls={true} />
-                                        <Area animationDuration={500} type="monotone" dataKey="tx" name="Upload (KB/s)" stroke="#ec4899" fillOpacity={1} fill="url(#colorTx)" strokeWidth={2} connectNulls={true} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </CardContent>
-                    </Card>
+                                <div className="h-[150px] w-full mt-2">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={finalChartData}>
+                                            <defs>
+                                                <linearGradient id="colorRx" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#f472b6" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#f472b6" stopOpacity={0} />
+                                                </linearGradient>
+                                                <linearGradient id="colorTx" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <XAxis
+                                                dataKey="timestamp"
+                                                type="number"
+                                                domain={['dataMin', 'dataMax']}
+                                                ticks={ticks}
+                                                tick={<CustomAxisTick showSeconds={timeRange === '1m'} />}
+                                                interval={0}
+                                                tickLine={false}
+                                                axisLine={false}
+                                            />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: '#e4e4e7', color: '#18181b', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                                                itemStyle={{ color: '#18181b' }}
+                                                labelFormatter={(label) => new Date(label).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                            />
+                                            <Area animationDuration={500} type="monotone" dataKey="rx" name="Download (KB/s)" stroke="#f472b6" fillOpacity={1} fill="url(#colorRx)" strokeWidth={3} connectNulls={true} />
+                                            <Area animationDuration={500} type="monotone" dataKey="tx" name="Upload (KB/s)" stroke="#38bdf8" fillOpacity={1} fill="url(#colorTx)" strokeWidth={3} connectNulls={true} />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 </div>
             </div>
         </section>

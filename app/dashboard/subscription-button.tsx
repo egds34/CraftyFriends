@@ -12,17 +12,8 @@ export function SubscriptionButton({ isPremium }: SubscriptionButtonProps) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
 
-    const handleSubscribe = async () => {
-        try {
-            setLoading(true)
-            const response = await fetch("/api/stripe/checkout", { method: "POST" })
-            const data = await response.json()
-            window.location.href = data.url
-        } catch (error) {
-            console.error(error)
-        } finally {
-            setLoading(false)
-        }
+    const handleSubscribe = () => {
+        router.push("/store")
     }
 
     const handleManage = async () => {
@@ -30,9 +21,10 @@ export function SubscriptionButton({ isPremium }: SubscriptionButtonProps) {
             setLoading(true)
             const response = await fetch("/api/stripe/portal", { method: "POST" })
             const data = await response.json()
-            window.location.href = data.url
+            window.open(data.url, '_blank')
         } catch (error) {
             console.error(error)
+            alert("Failed to redirect to subscription portal. Please ensure it is configured in your Stripe Dashboard.")
         } finally {
             setLoading(false)
         }

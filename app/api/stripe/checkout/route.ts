@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { stripe } from "@/lib/stripe"
 import { NextResponse } from "next/server"
+import Stripe from "stripe"
 
 export async function POST(req: Request) {
     try {
@@ -11,12 +12,37 @@ export async function POST(req: Request) {
             return new NextResponse("Unauthorized", { status: 401 })
         }
 
+        const { priceId } = await req.json()
+        let actualPriceId = priceId
+        if (priceId === 'premium') {
+            actualPriceId = process.env.STRIPE_PRICE_ID
+        }
+
+        if (!actualPriceId) {
+            return new NextResponse("Missing Price ID", { status: 400 })
+        }
+
+        // Retrieve price details to check product metadata
+        const priceObj = await stripe.prices.retrieve(actualPriceId, {
+            expand: ['product']
+        });
+
+        const productObj = priceObj.product as Stripe.Product;
+        const newCategory = productObj.metadata?.app_category || 'membership';
+        const newTierRank = parseInt(productObj.metadata?.tier_rank || '0', 10);
+
+        // Fetch user AND their active subscriptions
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
             select: {
                 id: true,
                 email: true,
-                stripeCustomerId: true
+                stripeCustomerId: true,
+                subscriptions: {
+                    where: {
+                        currentPeriodEnd: { gt: new Date() }
+                    }
+                }
             }
         })
 
@@ -24,12 +50,47 @@ export async function POST(req: Request) {
             return new NextResponse("User not found", { status: 404 })
         }
 
+        // CONFLICT & UPGRADE CHECK
+        if (newCategory === 'membership') {
+            const currentMembership = user.subscriptions.find((sub: any) => sub.category === 'membership');
+
+            if (currentMembership) {
+                // Determine rank of current membership
+                let oldTierRank = 0;
+                if (currentMembership.priceId) {
+                    try {
+                        const oldPrice = await stripe.prices.retrieve(currentMembership.priceId, {
+                            expand: ['product']
+                        });
+                        const oldProduct = oldPrice.product as Stripe.Product;
+                        oldTierRank = parseInt(oldProduct.metadata?.tier_rank || '0', 10);
+                    } catch (e) {
+                        console.error("[CHECKOUT] Failed to fetch old subscription details:", e);
+                        // Fallback: If we can't verify rank, we might want to fail safe or block.
+                        // For now, defaulting to 0 means we might allow a duplicate if Stripe fails, 
+                        // but blocking is safer to prevent double billing.
+                        oldTierRank = 999;
+                    }
+                }
+
+                console.log(`[CHECKOUT] Upgrade Check: New Rank (${newTierRank}) vs Old Rank (${oldTierRank})`);
+
+                if (newTierRank <= oldTierRank) {
+                    return NextResponse.json(
+                        { error: "You already have an active membership at this tier or higher. Manage your subscription to change plans." },
+                        { status: 409 }
+                    );
+                }
+                // If New > Old, we allow it (Upgrade)
+            }
+        }
+
         // Check if user already has a Stripe Customer ID
         let stripeCustomerId = user.stripeCustomerId
 
         if (!stripeCustomerId) {
             const customer = await stripe.customers.create({
-                email: user.email,
+                email: user.email!,
                 metadata: {
                     userId: user.id
                 }
@@ -43,18 +104,7 @@ export async function POST(req: Request) {
             })
         }
 
-        const { priceId } = await req.json()
-        let actualPriceId = priceId
-        if (priceId === 'premium') {
-            actualPriceId = process.env.STRIPE_PRICE_ID
-        }
-
-        if (!actualPriceId) {
-            return new NextResponse("Missing Price ID", { status: 400 })
-        }
-
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-
         let sessionUrl: string | null = null
 
         try {
@@ -76,12 +126,12 @@ export async function POST(req: Request) {
             })
             sessionUrl = session.url
         } catch (err: any) {
-            // Self-healing: If customer is missing (deleted in Stripe or key mismatch), create a new one
+            // Self-healing: If customer is missing
             if (err.code === 'resource_missing' && err.param === 'customer') {
                 console.log("[STRIPE_CHECKOUT] Customer ID invalid, creating new customer...")
 
                 const newCustomer = await stripe.customers.create({
-                    email: user.email,
+                    email: user.email!,
                     metadata: { userId: user.id }
                 })
 
@@ -109,7 +159,7 @@ export async function POST(req: Request) {
                 })
                 sessionUrl = retrySession.url
             } else {
-                throw err // Re-throw other errors
+                throw err
             }
         }
 
@@ -121,7 +171,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ url: sessionUrl })
     } catch (error: any) {
         console.error("[STRIPE_CHECKOUT] Error:", error)
-        // Log key prefix safely to debug test/live mismatch
         const key = process.env.STRIPE_SECRET_KEY || ""
         console.log("[STRIPE_CHECKOUT] Key Prefix:", key.substring(0, 8) + "...")
 
