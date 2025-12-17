@@ -1,38 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { StoreNavbar } from "./store/store-navbar"
 import { ProductCard } from "./store/product-card"
 import { FloatingCart } from "./store/floating-cart"
 import { User } from "next-auth"
-import { Product } from "@/types/store"
+import { mockProducts } from "@/lib/mock-products"
 
 interface StoreClientProps {
     user?: User
 }
 
 export function StoreClient({ user }: StoreClientProps) {
-    const [products, setProducts] = useState<Product[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    useEffect(() => {
-        async function fetchProducts() {
-            try {
-                const response = await fetch('/api/products')
-                if (!response.ok) throw new Error('Failed to fetch products')
-                const data = await response.json()
-                setProducts(data)
-            } catch (err: any) {
-                console.error('Error fetching products:', err)
-                setError(err.message)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchProducts()
-    }, [])
+    // Using mock data temporarily
+    const products = mockProducts
 
     // Group products by category
     const categories = Array.from(new Set(products.map(p => p.category)))
@@ -60,21 +40,7 @@ export function StoreClient({ user }: StoreClientProps) {
             <StoreNavbar />
 
             <div className="container mx-auto px-4 py-8 max-w-5xl">
-                {loading ? (
-                    <div className="flex items-center justify-center min-h-[50vh]">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                            <p className="text-muted-foreground">Loading products...</p>
-                        </div>
-                    </div>
-                ) : error ? (
-                    <div className="flex items-center justify-center min-h-[50vh]">
-                        <div className="text-center">
-                            <p className="text-red-500 mb-2">Failed to load products</p>
-                            <p className="text-sm text-muted-foreground">{error}</p>
-                        </div>
-                    </div>
-                ) : products.length === 0 ? (
+                {products.length === 0 ? (
                     <div className="flex items-center justify-center min-h-[50vh]">
                         <p className="text-muted-foreground">No products available at this time.</p>
                     </div>
