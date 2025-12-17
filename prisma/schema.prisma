@@ -23,7 +23,7 @@ model User {
   stripeCustomerId  String?   @unique
   role              Role      @default(BASIC)
   
-  subscription      Subscription?
+  subscriptions     Subscription[]
   accounts          Account[]
   sessions          Session[]
 }
@@ -66,10 +66,17 @@ model VerificationToken {
 model Subscription {
   transactionId    String    @id @default(cuid())
   currentPeriodEnd DateTime?
+  cancelAtPeriodEnd Boolean  @default(false)
   
+  category         String    @default("membership") // e.g., "membership", "addon"
+  priceId          String?
+
   // Foreign key to User
-  id               String    @unique
+  id               String    
   user             User      @relation(fields: [id], references: [id], onDelete: Cascade)
+  
+  // Ensure a user can't have duplicate subscriptions for the same price/product if desired, 
+  // but for now strictly just removing the @unique on 'id' permits multiple subs.
 }
 
 model ServerMetric {
@@ -95,4 +102,24 @@ model ServerMetric {
 
   @@index([timestamp])
   @@index([serverName])
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  stripeProductId String   @unique
+  stripePriceId   String?  @unique
+  name            String
+  description     String?
+  price           Float
+  currency        String   @default("usd")
+  category        String
+  type            String   // "subscription" or "one-time"
+  features        String[] // Array of feature strings
+  active          Boolean  @default(true)
+  metadata        Json?    // Store additional Stripe metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([category])
+  @@index([active])
 }

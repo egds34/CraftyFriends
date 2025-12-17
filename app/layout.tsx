@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
+import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SignOutProvider } from "@/providers/SignOutProvider";
+import { CartProvider } from "@/components/providers/cart-provider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const superAdorable = localFont({
+  src: "./fonts/SuperAdorable.ttf",
+  variable: "--font-super-adorable",
 });
 
 const geistMono = Geist_Mono({
@@ -27,6 +29,11 @@ export const metadata: Metadata = {
   },
 };
 
+import { ThemeToggle } from "@/components/theme-toggle";
+import Navbar from "@/components/navbar";
+
+// ... existing imports
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -35,17 +42,20 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${superAdorable.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
-          disableTransitionOnChange
         >
           <SignOutProvider>
-            {children}
+            <CartProvider>
+              <Navbar />
+              {children}
+            </CartProvider>
           </SignOutProvider>
+          <ThemeToggle />
         </ThemeProvider>
       </body>
     </html>

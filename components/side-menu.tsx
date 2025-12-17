@@ -2,7 +2,7 @@
 
 import { ReactNode, useState } from "react"
 import Link from "next/link"
-import { Menu, Trophy, Map, X } from "lucide-react"
+import { Menu, Trophy, Map, X, BarChart3 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 
@@ -46,9 +46,19 @@ export function SideMenu({ blueMapUrl, children }: SideMenuProps) {
                         </div>
 
                         <div className="flex flex-col gap-2">
+                            <Link href="/store" className="flex items-center gap-3 p-3 rounded-md hover:bg-accent transition-colors group">
+                                <div className="p-2 bg-purple-500/10 rounded-full group-hover:bg-purple-500/20 text-purple-500">
+                                    <Trophy className="h-5 w-5" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="font-medium">Shop</span>
+                                    <span className="text-xs text-muted-foreground">Premium Upgrades</span>
+                                </div>
+                            </Link>
+
                             <Link href="/leaderboard" className="flex items-center gap-3 p-3 rounded-md hover:bg-accent transition-colors group">
                                 <div className="p-2 bg-primary/10 rounded-full group-hover:bg-primary/20 text-primary">
-                                    <Trophy className="h-5 w-5" />
+                                    <BarChart3 className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="font-medium">Leaderboard</span>
