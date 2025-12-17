@@ -38,77 +38,87 @@
 }
 
 :root {
-  /* Cute Pastel Theme - Light Mode */
-  --background: 40 20% 97%;
-  /* Soft Cream */
-  --foreground: 260 20% 20%;
-  /* Soft Charcoal */
+  /* 🍇 GRAPE SODA THEME - Light Mode */
 
+  /* Background: Very pale lavender mist */
+  --background: 280 30% 98%;
+
+  /* Foreground: Deep Grape for text readability */
+  --foreground: 270 50% 20%;
+
+  /* Cards: White with a tiny hint of purple */
   --card: 0 0% 100%;
-  --card-foreground: 260 20% 20%;
-
+  --card-foreground: 270 50% 20%;
   --popover: 0 0% 100%;
-  --popover-foreground: 260 20% 20%;
+  --popover-foreground: 270 50% 20%;
 
-  --primary: 265 80% 65%;
-  /* Vivd Pastel Purple */
+  /* Primary: Vibrant Juicy Grape */
+  --primary: 275 85% 60%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 320 70% 92%;
-  /* Soft Pink */
-  --secondary-foreground: 320 50% 40%;
+  /* Secondary: Soft Lilac Foam */
+  --secondary: 275 60% 94%;
+  --secondary-foreground: 275 60% 40%;
 
-  --muted: 260 20% 94%;
-  --muted-foreground: 260 10% 55%;
+  /* Muted: Grayish Purple */
+  --muted: 275 20% 94%;
+  --muted-foreground: 275 20% 50%;
 
-  --accent: 180 60% 92%;
-  /* Minty */
-  --accent-foreground: 180 50% 35%;
+  /* Accent: Fresh Grape Leaf Green */
+  --accent: 145 50% 90%;
+  --accent-foreground: 145 60% 35%;
 
-  --destructive: 0 85% 75%;
-  /* Soft Red */
+  /* Destructive: Soft Raspberry */
+  --destructive: 340 85% 65%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 260 20% 90%;
-  --input: 260 20% 90%;
-  --ring: 265 80% 65%;
+  /* Border & Input: Soft Lavender lines */
+  --border: 275 30% 90%;
+  --input: 275 30% 90%;
+  --ring: 275 85% 60%;
 
-  --radius: 1rem;
-  /* Very rounded corners */
+  /* Radius: Extra Bubbly */
+  --radius: 1.5rem;
 }
 
 .dark {
-  /* Cute Pastel Theme - Dark Mode */
-  --background: 265 25% 15%;
-  /* Deep Purple/Gray */
-  --foreground: 40 20% 94%;
+  /* 🍇 GRAPE NIGHT THEME - Dark Mode */
 
-  --card: 265 25% 20%;
-  --card-foreground: 40 20% 94%;
+  /* Background: Deep Eggplant */
+  --background: 275 50% 8%;
 
-  --popover: 265 25% 20%;
-  --popover-foreground: 40 20% 94%;
+  /* Foreground: Pale Lavender Mist */
+  --foreground: 275 30% 95%;
 
-  --primary: 265 90% 80%;
-  /* Bright Lavender */
-  --primary-foreground: 265 40% 20%;
+  /* Card: Rich Dark Grape */
+  --card: 275 40% 12%;
+  --card-foreground: 275 30% 95%;
+  --popover: 275 40% 12%;
+  --popover-foreground: 275 30% 95%;
 
-  --secondary: 320 40% 25%;
-  /* Deep Pink/Purple */
-  --secondary-foreground: 320 80% 85%;
+  /* Primary: Bright Neon Grape */
+  --primary: 275 80% 70%;
+  --primary-foreground: 275 60% 10%;
 
-  --muted: 265 25% 25%;
-  --muted-foreground: 265 10% 70%;
+  /* Secondary: Deep Velvet Purple */
+  --secondary: 275 40% 20%;
+  --secondary-foreground: 275 30% 90%;
 
-  --accent: 265 25% 30%;
-  --accent-foreground: 40 20% 94%;
+  /* Muted: Darkened Lilac */
+  --muted: 275 30% 18%;
+  --muted-foreground: 275 20% 70%;
 
-  --destructive: 0 70% 50%;
+  /* Accent: Darker Leaf Green */
+  --accent: 145 40% 20%;
+  --accent-foreground: 145 40% 90%;
+
+  /* Destructive: Muted Raspberry */
+  --destructive: 340 70% 50%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 265 25% 30%;
-  --input: 265 25% 30%;
-  --ring: 265 90% 80%;
+  --border: 275 30% 20%;
+  --input: 275 30% 20%;
+  --ring: 275 80% 70%;
 }
 
 body {
