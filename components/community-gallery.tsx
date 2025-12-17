@@ -36,7 +36,7 @@ export function CommunityGallery({ images }: CommunityGalleryProps) {
         <section className="py-24 bg-muted/40 relative overflow-hidden">
             <div className="container px-4 mx-auto text-center relative z-10">
                 <div className="flex flex-col items-center justify-center mb-16">
-                    <h2 className="text-3xl md:text-5xl font-extrabold mb-4 text-primary tracking-tight">
+                    <h2 className="text-3xl md:text-5xl font-heading font-extrabold mb-4 text-primary tracking-tight">
                         Featured Builds
                     </h2>
                     <p className="text-lg text-muted-foreground font-medium">

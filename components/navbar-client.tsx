@@ -67,7 +67,7 @@ export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
             }}
             transition={{ duration: isHome ? 0.3 : 0, ease: "easeInOut" }}
         >
-            <Link href="/" className="text-xl font-bold tracking-tight flex items-center gap-2">
+            <Link href="/" className="text-xl font-heading font-bold tracking-tight flex items-center gap-2">
                 <Image src="/images/logo.png" alt="Logo" width={32} height={32} className="rounded-full" />
                 <span>Crafty <span className="text-primary">Friends</span></span>
             </Link>

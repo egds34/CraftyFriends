@@ -38,7 +38,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
                 </div>
 
                 <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-lg">{product.name}</h3>
+                    <h3 className="font-heading font-bold text-lg">{product.name}</h3>
                     <div className="text-right">
                         <span className="text-lg font-bold">
                             {product.price === 0 ? 'Free' : `$${product.price}`}

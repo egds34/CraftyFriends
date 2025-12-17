@@ -37,7 +37,7 @@ export function LeaderboardView() {
                     <div className="bg-primary/10 p-4 rounded-full mb-4">
                         <Trophy className="w-12 h-12 text-primary" />
                     </div>
-                    <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-4">
+                    <h1 className="text-4xl font-heading font-extrabold tracking-tight lg:text-5xl mb-4">
                         Server Leaderboard
                     </h1>
                     <p className="text-muted-foreground text-lg max-w-[600px] mx-auto">

@@ -75,7 +75,7 @@ export function LandingPage({ bannerImages, user, communityImages, votingSites }
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5 }}
-                            className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60"
+                            className="text-4xl font-heading font-extrabold tracking-tighter sm:text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60"
                         >
                             Crafty Friends Minecraft Server!
                         </motion.h1>

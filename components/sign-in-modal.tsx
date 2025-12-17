@@ -79,7 +79,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
 
                             {/* Decorative gradient for premium feel */}
                             <div className="mb-6 text-center">
-                                <h1 className="text-3xl font-bold tracking-tight">
+                                <h1 className="text-3xl font-heading font-bold tracking-tight">
                                     {isSignUp ? "Create Account" : "Welcome Back"}
                                 </h1>
                                 <p className="text-muted-foreground">

@@ -29,7 +29,7 @@ export function StoreClient({ user }: StoreClientProps) {
                     }}
                 />
                 <div className="relative z-10">
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Server Shop</h1>
+                    <h1 className="text-4xl md:text-5xl font-heading font-bold tracking-tight mb-4">Server Shop</h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                         Enhance your experience with ranks, boosts, and exclusive cosmetics.
                     </p>
@@ -50,7 +50,7 @@ export function StoreClient({ user }: StoreClientProps) {
                             <section key={category} id={category} className="scroll-mt-32">
                                 <div className="flex items-center gap-4 mb-8 justify-center">
                                     <div className="h-px w-12 bg-border hidden md:block" />
-                                    <h2 className="text-3xl font-bold text-center">{category}</h2>
+                                    <h2 className="text-3xl font-heading font-bold text-center">{category}</h2>
                                     <div className="h-px w-12 bg-border hidden md:block" />
                                 </div>
 

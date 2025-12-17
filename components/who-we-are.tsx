@@ -12,7 +12,7 @@ export function WhoWeAre() {
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
                 >
-                    <h2 className="text-3xl md:text-5xl font-extrabold mb-8 text-primary tracking-tight">
+                    <h2 className="text-3xl md:text-5xl font-heading font-extrabold mb-8 text-primary tracking-tight">
                         Who We Are
                     </h2>
 

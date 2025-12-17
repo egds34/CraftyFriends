@@ -350,7 +350,7 @@ export function ServerMetrics() {
                     viewport={{ once: true }}
                     className="mb-12 flex flex-col items-center justify-center gap-6 text-center"
                 >
-                    <h2 className="text-3xl md:text-5xl font-extrabold text-primary tracking-tight">
+                    <h2 className="text-3xl md:text-5xl font-heading font-extrabold text-primary tracking-tight">
                         Server Statistics
                     </h2>
 
