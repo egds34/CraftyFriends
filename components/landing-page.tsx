@@ -9,6 +9,7 @@ import { HeroBackground } from "@/components/hero-background"
 import { GetStartedButton } from "@/components/get-started-button"
 import { User } from "next-auth"
 import { PaymentModal } from "@/components/payment-modal"
+import { ServerMetrics } from "@/components/server-metrics"
 
 interface LandingPageProps {
     bannerImages: string[]
@@ -138,6 +139,9 @@ export function LandingPage({ bannerImages, user }: LandingPageProps) {
                     </div>
                 </div>
             </section>
+
+            {/* Server Metrics Section */}
+            <ServerMetrics />
 
             {/* Features Section */}
             <section id="features" className="py-20 bg-muted/50">
