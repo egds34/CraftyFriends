@@ -1,6 +1,6 @@
 "use client"
-
-import { motion } from "framer-motion"
+import "react-responsive-carousel/lib/styles/carousel.min.css" // requires a loader
+import { Carousel } from 'react-responsive-carousel'
 
 interface HeroBackgroundProps {
     images: string[]
@@ -9,24 +9,28 @@ interface HeroBackgroundProps {
 export function HeroBackground({ images }: HeroBackgroundProps) {
     // Fallback if no images are provided
     const bannerImages = images.length > 0 ? images : ["/images/banners/banner-1.png"]
+
     return (
         <div className="absolute inset-0 overflow-hidden -z-10 bg-black">
             {/* Overlay for readability */}
             <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-10" />
 
-            <div className="relative flex h-full overflow-hidden">
-                <motion.div
-                    className="flex h-full min-w-full items-center"
-                    animate={{ x: ["0%", "-50%"] }}
-                    transition={{
-                        duration: 120, // 2 minutes for full rotation - nice and slow
-                        ease: "linear",
-                        repeat: Infinity,
-                    }}
+            <div className="h-full w-full">
+                <Carousel
+                    autoPlay
+                    infiniteLoop
+                    showThumbs={false}
+                    showStatus={false}
+                    showArrows={false}
+                    showIndicators={false}
+                    stopOnHover={false}
+                    interval={8000} // Longer interval to allow for zoom effect
+                    transitionTime={2000}
+                    animationHandler="fade"
+                    className="h-full"
                 >
-                    {/* Double the images to create seamless loop */}
-                    {[...bannerImages, ...bannerImages].map((src, i) => (
-                        <div key={i} className="relative h-full aspect-video min-w-[800px] flex-shrink-0">
+                    {bannerImages.map((src, i) => (
+                        <div key={i} className="h-screen w-full relative overflow-hidden">
                             <img
                                 src={src}
                                 alt={`Background ${i}`}
@@ -34,7 +38,7 @@ export function HeroBackground({ images }: HeroBackgroundProps) {
                             />
                         </div>
                     ))}
-                </motion.div>
+                </Carousel>
             </div>
         </div>
     )

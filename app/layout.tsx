@@ -17,7 +17,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'),
   title: "Crafty Friends",
-  description: "",
   openGraph: {
     title: "Crafty Friends",
     description: "A Minecraft server created by banjomonkey420",

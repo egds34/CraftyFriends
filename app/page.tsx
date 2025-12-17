@@ -8,20 +8,19 @@ import fs from "fs/promises"
 import path from "path"
 
 async function getBannerImages() {
-  const bannerDir = process.env.BANNER_IMAGE_DIR
+  let bannerDir = process.env.BANNER_IMAGE_DIR
 
-  // Graceful fallback or empty if not set
   if (!bannerDir) {
-    console.warn("BANNER_IMAGE_DIR environment variable is not set. Banner images will not load.")
-    return []
+    bannerDir = path.join(process.cwd(), 'app/assets/bannerImages')
+    console.log("BANNER_IMAGE_DIR not set, using default:", bannerDir)
   }
 
   try {
     const files = await fs.readdir(bannerDir)
     return files
-      .filter(file => /\.(png|jpg|jpeg|webp)$/i.test(file)) // Allow any image name now as per update, or stick to banner*? User said "link in .env file", implies using that folder's content. Let's just grab all images from that folder.
+      .filter(file => /\.(png|jpg|jpeg|webp)$/i.test(file))
+      .sort(() => Math.random() - 0.5) // Shuffle the array randomly for each request
       .map(file => `/api/images/banners/${file}`)
-      .sort()
   } catch (error) {
     console.error(`Failed to read banner images from ${bannerDir}:`, error)
     return []

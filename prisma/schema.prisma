@@ -71,3 +71,28 @@ model Subscription {
   id               String    @unique
   user             User      @relation(fields: [id], references: [id], onDelete: Cascade)
 }
+
+model ServerMetric {
+  id                String   @id @default(cuid())
+  timestamp         DateTime @default(now())
+  serverName        String
+  tps               Float
+  mspt              Float
+  onlinePlayerCount Int
+  maxPlayers        Int
+  freeMemory        BigInt
+  totalMemory       BigInt
+  maxMemory         BigInt
+  loadedChunks      Int
+  entityCount       Int
+  cpuUsage          Float
+  uploadBytes       BigInt
+  downloadBytes     BigInt
+  diskUsage         BigInt
+  status            String   @default("ONLINE")
+  startTime         BigInt   @default(0) // Unix timestamp (ms)
+  nextRestart       String?
+
+  @@index([timestamp])
+  @@index([serverName])
+}
