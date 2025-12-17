@@ -107,14 +107,14 @@ export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
                     <nav className="flex items-center gap-12">
                         <Link
                             href="/store"
-                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2 shadow-sm"
+                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
                         >
                             <Trophy className="w-4 h-4" />
                             Shop
                         </Link>
                         <Link
                             href="/leaderboard"
-                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2 shadow-sm"
+                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
                         >
                             <BarChart3 className="w-4 h-4" />
                             Leaderboard
@@ -123,7 +123,7 @@ export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
                             <Link
                                 href={blueMapUrl}
                                 target="_blank"
-                                className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2 shadow-sm"
+                                className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
                             >
                                 <MapIcon className="w-4 h-4" />
                                 BlueMap

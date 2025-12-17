@@ -14,18 +14,24 @@ export async function GET() {
         })
 
         // Transform to match the Product type expected by the frontend
-        const transformedProducts = products.map(product => ({
-            id: product.id,
-            stripeProductId: product.stripeProductId,
-            stripePriceId: product.stripePriceId,
-            name: product.name,
-            description: product.description || "",
-            price: product.price,
-            category: product.category,
-            type: product.type,
-            features: product.features,
-            priceId: product.stripePriceId || undefined,
-        }))
+        const transformedProducts = products.map(product => {
+            const metadata = product.metadata as any
+            return {
+                id: product.id,
+                stripeProductId: product.stripeProductId,
+                stripePriceId: product.stripePriceId,
+                name: product.name,
+                description: product.description || "",
+                summary: metadata?.summary || product.description || "",
+                details: metadata?.details || product.description || "",
+                price: product.price,
+                category: product.category,
+                type: product.type,
+                features: product.features,
+                priceId: product.stripePriceId || undefined,
+                isActive: metadata?.isActive !== false, // Default to true
+            }
+        })
 
         return NextResponse.json(transformedProducts)
     } catch (error: any) {

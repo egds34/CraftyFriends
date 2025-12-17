@@ -36,14 +36,18 @@ export const metadata: Metadata = {
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import Navbar from "@/components/navbar";
+import { auth } from "@/auth";
+import { AccountCompletionModal } from "@/components/account-completion-modal";
 
 // ... existing imports
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -59,6 +63,7 @@ export default function RootLayout({
               <Navbar />
               {children}
             </CartProvider>
+            <AccountCompletionModal session={session} />
           </SignOutProvider>
           <ThemeToggle />
         </ThemeProvider>

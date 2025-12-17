@@ -4,7 +4,10 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { Heart, HeartCrack } from "lucide-react";
 import Pusher from "pusher-js";
+import { PillowCard } from "@/components/ui/pillow-card";
+
 
 interface Metric {
     id: string;
@@ -262,7 +265,7 @@ export function ServerMetrics() {
         return filledData;
     }, [data, timeRange, graphNow]);
 
-    if (!latest && finalChartData.length === 0) return null;
+    // if (!latest && finalChartData.length === 0) return null;
 
     const rawLatest = latest || (data.length > 0 ? data[data.length - 1] : null);
 
@@ -281,8 +284,8 @@ export function ServerMetrics() {
         status: 'OFFLINE',
         tps: 0,
         cpuUsage: 0,
-        totalMemory: rawLatest?.totalMemory || '0', // Keep config if available
-        freeMemory: rawLatest?.totalMemory || '0',  // Show full 'used' or 'free'? usually 0 usage if offline.
+        totalMemory: rawLatest?.totalMemory || '0',
+        freeMemory: rawLatest?.freeMemory || '0',   // Show full 'used' or 'free'? usually 0 usage if offline.
         maxMemory: rawLatest?.maxMemory || '0',
         startTime: rawLatest?.startTime || '0',
         formattedTime: rawLatest?.formattedTime || '',
@@ -326,7 +329,11 @@ export function ServerMetrics() {
         }), { tx: 0, rx: 0 });
     }, [finalChartData]);
 
-    const xDomainMin = finalChartData.length > 0 ? finalChartData[0].timestamp : graphNow;
+    let duration = 60 * 1000;
+    if (timeRange === '1h') duration = 60 * 60 * 1000;
+    else if (timeRange === '24h') duration = 24 * 60 * 60 * 1000;
+
+    const xDomainMin = finalChartData.length > 0 ? finalChartData[0].timestamp : (graphNow - duration);
     const xDomainMax = finalChartData.length > 0 ? finalChartData[finalChartData.length - 1].timestamp : graphNow;
 
     let tickInterval = 10000;
@@ -342,28 +349,31 @@ export function ServerMetrics() {
     }
 
     return (
-        <section className="py-20 bg-muted/30 backdrop-blur-sm">
-            <div className="container mx-auto px-4 max-w-7xl">
+        <section className="py-24 relative overflow-hidden">
+            {/* Background Blob for aesthetics */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl -z-10" />
+
+            <div className="container mx-auto px-4 max-w-6xl">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="mb-12 flex flex-col items-center justify-center gap-6 text-center"
+                    className="mb-16 text-center"
                 >
-                    <h2 className="text-3xl md:text-5xl font-heading font-extrabold text-primary tracking-tight">
-                        Server Statistics
+                    <h2 className="text-4xl md:text-6xl font-heading font-black text-primary mb-6 tracking-tight drop-shadow-sm">
+                        Server Vitals
                     </h2>
 
-                    <div className="flex bg-card/50 p-1 rounded-xl border border-primary/10 backdrop-blur-md shadow-sm">
+                    <div className="inline-flex bg-white/50 dark:bg-black/20 p-1.5 rounded-full backdrop-blur-md border border-white/20 shadow-sm">
                         {(['1m', '1h', '24h'] as const).map((range) => (
                             <button
                                 key={range}
                                 onClick={() => setTimeRange(range)}
                                 className={`
-                                    px-4 py-1.5 text-sm font-bold rounded-lg transition-all duration-300
+                                    px-6 py-2 text-sm font-bold transition-all duration-300 rounded-2xl mx-1
                                     ${timeRange === range
-                                        ? 'bg-primary text-primary-foreground shadow-sm'
-                                        : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}
+                                        ? 'bg-primary text-white shadow-md transform scale-105'
+                                        : 'bg-transparent text-muted-foreground hover:text-primary hover:bg-primary/10'}
                                 `}
                             >
                                 {range}
@@ -372,31 +382,57 @@ export function ServerMetrics() {
                     </div>
                 </motion.div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {/* UI Cards same as before... */}
-                    <motion.div
-                        className="h-full"
-                        initial={{ opacity: 0, y: 40 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, margin: "-100px" }}
-                        transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98], delay: 0 }}
-                    >
-                        <Card className="bg-card/50 border-primary/10 hover:border-primary/20 transition-colors backdrop-blur-sm shadow-sm hover:shadow-md flex flex-col justify-center items-center py-6 h-full rounded-2xl">
-                            <CardHeader className="pb-2 p-0 text-center">
-                                <CardTitle className="text-primary/80 text-sm font-semibold tracking-wide uppercase">Server Status</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0 mt-4 text-center">
-                                <div className="flex items-center justify-center gap-3">
-                                    <div className={`w-4 h-4 rounded-full ${displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? 'bg-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.5)]' : 'bg-red-400'} `}></div>
-                                    <span className={`text-4xl font-bold ${displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? 'text-emerald-500' : 'text-red-500'} `}>
-                                        {displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? 'ONLINE' : 'OFFLINE'}
-                                    </span>
+                <div className="flex flex-col gap-8">
+
+                    {/* TOP ROW: Status & TPS (Stair Step 1: Left) */}
+                    <div className="w-full lg:w-[85%] mr-auto grid grid-cols-1 lg:grid-cols-5 gap-8">
+                        {/* Status Card (2 cols) */}
+                        {/* Status Card (2 cols) */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                            className="lg:col-span-2 relative h-full min-h-[250px]"
+                        >
+                            <PillowCard
+                                shadowClassName={displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown'
+                                    ? 'bg-emerald-500/40'
+                                    : 'bg-red-500/40'}
+                                contentClassName="flex flex-col justify-center items-center text-center"
+                                className="w-full h-full"
+                            >
+                                <div className="relative mb-6">
+                                    <div className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl shadow-inner
+                                        ${displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown'
+                                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500'
+                                            : 'bg-red-100 dark:bg-red-900/30 text-red-500'}
+                                    `}>
+                                        {displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? (
+                                            <motion.div
+                                                animate={{ scale: [1, 1.2, 1] }}
+                                                transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                                            >
+                                                <Heart className="w-10 h-10 fill-current" />
+                                            </motion.div>
+                                        ) : (
+                                            <HeartCrack className="w-10 h-10" />
+                                        )}
+                                    </div>
+                                    <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm border
+                                        ${displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown'
+                                            ? 'bg-emerald-500 border-emerald-400 text-white'
+                                            : 'bg-red-500 border-red-400 text-white'}
+                                    `}>
+                                        {displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? 'Online' : 'Offline'}
+                                    </div>
                                 </div>
-                                <div className="flex flex-col gap-1 mt-2">
-                                    <p className="text-muted-foreground text-xs font-medium">
-                                        Uptime: {(() => {
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Uptime</p>
+                                    <p className="text-2xl font-black text-foreground font-heading">
+                                        {(() => {
                                             const start = Number(displayLatest.startTime);
-                                            if (start <= 0 || displayLatest.status === 'OFFLINE' || displayLatest.status === 'shutdown') return 'Unknown';
+                                            if (start <= 0 || displayLatest.status === 'OFFLINE' || displayLatest.status === 'shutdown') return 'Sleeping...';
                                             const diff = Math.max(0, now - start);
                                             const hours = Math.floor(diff / (1000 * 60 * 60));
                                             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -404,192 +440,221 @@ export function ServerMetrics() {
                                         })()}
                                     </p>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
+                            </PillowCard>
+                        </motion.div>
 
-                    <motion.div
-                        className="h-full"
-                        initial={{ opacity: 0, y: 40 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, margin: "-100px" }}
-                        transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98], delay: 0.1 }}
-                    >
-                        <Card className="bg-card/50 border-primary/10 hover:border-primary/20 transition-colors backdrop-blur-sm shadow-sm hover:shadow-md h-full rounded-2xl">
-                            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                                <CardTitle className="text-primary/80 text-sm font-semibold tracking-wide uppercase">CPU Load</CardTitle>
-                                <span className="text-xs text-muted-foreground font-mono">Peak: {peaks.cpu.toFixed(1)}%</span>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-baseline gap-2 mb-2">
-                                    <span className="text-4xl font-bold text-purple-500">{displayLatest.cpuUsage.toFixed(1)}%</span>
-                                </div>
-                                <div className="h-3 w-full bg-secondary rounded-full overflow-hidden mt-4">
-                                    <div
-                                        className="h-full bg-gradient-to-r from-purple-400 to-pink-300 transition-all duration-500 rounded-full"
-                                        style={{ width: `${Math.min(displayLatest.cpuUsage, 100)}% ` }}
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-
-                    <motion.div
-                        className="h-full lg:col-span-2"
-                        initial={{ opacity: 0, y: 40 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, margin: "-100px" }}
-                        transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98], delay: 0.2 }}
-                    >
-                        <Card className="bg-card/50 border-primary/10 hover:border-primary/20 transition-colors backdrop-blur-sm shadow-sm hover:shadow-md h-full rounded-2xl">
-                            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                                <CardTitle className="text-primary/80 text-sm font-semibold tracking-wide uppercase">RAM Usage</CardTitle>
-                                <span className="text-xs text-muted-foreground font-mono">Peak: {(peaks.ram / 1024 / 1024 / 1024).toFixed(1)} GB</span>
-                            </CardHeader>
-                            <CardContent className="relative">
-                                <div className="grid grid-cols-2 gap-4">
+                        {/* TPS Card (3 cols) */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                            className="lg:col-span-3 h-full relative"
+                        >
+                            <PillowCard
+                                shadowClassName="bg-amber-600/40"
+                                contentClassName="flex flex-col justify-between"
+                                className="w-full h-full"
+                            >
+                                <div className="flex justify-between items-start mb-4">
                                     <div>
-                                        <div className="flex items-baseline gap-2 mb-2">
-                                            <span className="text-4xl font-bold text-pink-500">{usedGB}</span>
-                                            <span className="text-muted-foreground text-sm font-medium">GB Used</span>
-                                        </div>
-                                        <div className="h-3 w-full bg-secondary rounded-full overflow-hidden mt-4">
-                                            <div
-                                                className="h-full bg-gradient-to-r from-pink-400 to-rose-300 transition-all duration-500 rounded-full"
-                                                style={{ width: `${memPercentage}% ` }}
-                                            />
-                                        </div>
+                                        <h3 className="font-bold text-xl flex items-center gap-2">
+                                            Server Tick Rate
+                                        </h3>
+                                        <p className="text-sm text-muted-foreground">Performance (Target: 20.0)</p>
                                     </div>
-                                    <div className="flex flex-col justify-center items-end">
-                                        <span className="text-2xl font-bold text-foreground/80">{maxGB} GB</span>
-                                        <span className="text-xs text-muted-foreground uppercase font-medium">Total Allocated</span>
+                                    <div className="text-right">
+                                        <div className={`text-4xl font-black ${displayLatest.tps > 19 ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                            {displayLatest.tps.toFixed(1)}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground font-medium mt-1">
+                                            Peak: {peaks.tps.toFixed(1)}
+                                        </p>
                                     </div>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-
-                    <motion.div
-                        className="lg:col-span-4"
-                        initial={{ opacity: 0, y: 40 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, margin: "-100px" }}
-                        transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98], delay: 0 }}
-                    >
-                        <Card className="bg-card/50 border-primary/10 hover:border-primary/20 transition-colors backdrop-blur-sm shadow-sm hover:shadow-md h-full rounded-2xl">
-                            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                                <CardTitle className="text-primary/80 text-sm font-semibold tracking-wide uppercase">TPS (Performance)</CardTitle>
-                                <span className="text-xs text-muted-foreground font-mono">Low: {peaks.tps.toFixed(1)} / Peak: 20.0</span>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-baseline gap-2 mb-4">
-                                    <span className={`text-4xl font-bold ${displayLatest.tps > 19 ? 'text-emerald-500' : displayLatest.tps > 15 ? 'text-yellow-500' : 'text-red-500'} `}>
-                                        {displayLatest.tps.toFixed(1)}
-                                    </span>
-                                    <span className="text-muted-foreground text-sm font-medium">/ 20.0</span>
-                                </div>
-                                <div className="h-[150px] w-full mt-2">
+                                <div className="h-[140px] w-full">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={finalChartData}>
                                             <defs>
-                                                <linearGradient id="colorTps" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.3} />
-                                                    <stop offset="95%" stopColor="#a78bfa" stopOpacity={0} />
+                                                <linearGradient id="colorTpsCute" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.2} />
+                                                    <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
                                                 </linearGradient>
                                             </defs>
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', border: 'none', borderRadius: '16px', padding: '12px' }}
+                                                labelStyle={{ color: '#71717a', fontWeight: 'bold', marginBottom: '4px' }}
+                                                formatter={(value: number) => [value.toFixed(2), "TPS"]}
+                                                labelFormatter={(label) => new Date(label).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                            />
                                             <XAxis
                                                 dataKey="timestamp"
                                                 type="number"
-                                                domain={['dataMin', 'dataMax']}
+                                                domain={[xDomainMin, xDomainMax]}
                                                 ticks={ticks}
                                                 tick={<CustomAxisTick showSeconds={timeRange === '1m'} />}
-                                                interval={0}
-                                                tickLine={false}
                                                 axisLine={false}
+                                                tickLine={false}
+                                                height={30}
+                                                interval={0}
                                             />
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: '#e4e4e7', color: '#18181b', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                                                labelFormatter={(label) => new Date(label).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                            />
-                                            <Area
-                                                animationDuration={500}
-                                                type="monotone"
-                                                dataKey="tps"
-                                                stroke="#a78bfa"
-                                                fillOpacity={1}
-                                                fill="url(#colorTps)"
-                                                strokeWidth={3}
-                                                connectNulls={true}
-                                            />
+                                            <Area type="monotone" name="TPS" dataKey="tps" stroke="#fbbf24" strokeWidth={4} fill="url(#colorTpsCute)" animationDuration={1000} />
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
+                            </PillowCard>
+                        </motion.div>
+                    </div>
 
-                    <motion.div
-                        className="lg:col-span-4"
-                        initial={{ opacity: 0, y: 40 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, margin: "-100px" }}
-                        transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98], delay: 0 }}
-                    >
-                        <Card className="bg-card/50 border-primary/10 hover:border-primary/20 transition-colors backdrop-blur-sm shadow-sm hover:shadow-md h-full rounded-2xl">
-                            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                                <CardTitle className="text-primary/80 text-sm font-semibold tracking-wide uppercase">Network Traffic</CardTitle>
-                                <div className="flex gap-4 text-xs text-muted-foreground font-mono">
-                                    <span>Peak ↓: {netPeaks.rx} KB/s</span>
-                                    <span>Peak ↑: {netPeaks.tx} KB/s</span>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex justify-between text-xs text-muted-foreground mb-2 px-2 font-medium">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-pink-400 border border-pink-300"></div>
-                                        Inbound: {finalChartData.length > 0 ? finalChartData[finalChartData.length - 1].rx : 0} KB/s
+                    {/* MIDDLE ROW: Network Graph (Stair Step 2: Center) */}
+                    <div className="w-full lg:w-[85%] mx-auto">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                            className="relative"
+                        >
+                            <PillowCard
+                                shadowClassName="bg-sky-600/40"
+                                className="w-full"
+                            >
+                                <div className="flex flex-wrap gap-6 justify-between items-center mb-6">
+                                    <div>
+                                        <h3 className="font-bold text-xl flex items-center gap-2">
+                                            Network Activity
+                                        </h3>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-sky-400 border border-sky-300"></div>
-                                        Outbound: {finalChartData.length > 0 ? finalChartData[finalChartData.length - 1].tx : 0} KB/s
+                                    <div className="flex gap-6">
+                                        <div className="text-right">
+                                            <p className="text-xs text-muted-foreground font-bold uppercase">Incoming</p>
+                                            <p className="text-xl font-black text-pink-500">
+                                                {finalChartData.length > 0 ? finalChartData[finalChartData.length - 1].rx : 0} <span className="text-sm">KB/s</span>
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-1">Peak: {netPeaks.rx} KB/s</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xs text-muted-foreground font-bold uppercase">Outgoing</p>
+                                            <p className="text-xl font-black text-sky-500">
+                                                {finalChartData.length > 0 ? finalChartData[finalChartData.length - 1].tx : 0} <span className="text-sm">KB/s</span>
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-1">Peak: {netPeaks.tx} KB/s</p>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="h-[150px] w-full mt-2">
+                                <div className="h-[200px] w-full">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={finalChartData}>
                                             <defs>
                                                 <linearGradient id="colorRx" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#f472b6" stopOpacity={0.3} />
+                                                    <stop offset="5%" stopColor="#f472b6" stopOpacity={0.2} />
                                                     <stop offset="95%" stopColor="#f472b6" stopOpacity={0} />
                                                 </linearGradient>
                                                 <linearGradient id="colorTx" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.3} />
+                                                    <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.2} />
                                                     <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
                                                 </linearGradient>
                                             </defs>
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', border: 'none', borderRadius: '16px', padding: '12px' }}
+                                                labelStyle={{ color: '#71717a', fontWeight: 'bold', marginBottom: '4px' }}
+                                                formatter={(value: number, name: string) => [`${value} KB/s`, name]}
+                                                labelFormatter={(label) => new Date(label).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                            />
                                             <XAxis
                                                 dataKey="timestamp"
                                                 type="number"
-                                                domain={['dataMin', 'dataMax']}
+                                                domain={[xDomainMin, xDomainMax]}
                                                 ticks={ticks}
                                                 tick={<CustomAxisTick showSeconds={timeRange === '1m'} />}
-                                                interval={0}
-                                                tickLine={false}
                                                 axisLine={false}
+                                                tickLine={false}
+                                                height={30}
+                                                interval={0}
                                             />
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: '#e4e4e7', color: '#18181b', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                                                itemStyle={{ color: '#18181b' }}
-                                                labelFormatter={(label) => new Date(label).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                            />
-                                            <Area animationDuration={500} type="monotone" dataKey="rx" name="Download (KB/s)" stroke="#f472b6" fillOpacity={1} fill="url(#colorRx)" strokeWidth={3} connectNulls={true} />
-                                            <Area animationDuration={500} type="monotone" dataKey="tx" name="Upload (KB/s)" stroke="#38bdf8" fillOpacity={1} fill="url(#colorTx)" strokeWidth={3} connectNulls={true} />
+                                            <Area type="monotone" name="Download" dataKey="rx" stroke="#f472b6" strokeWidth={3} fill="url(#colorRx)" animationDuration={1000} />
+                                            <Area type="monotone" name="Upload" dataKey="tx" stroke="#38bdf8" strokeWidth={3} fill="url(#colorTx)" animationDuration={1000} />
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
+                            </PillowCard>
+                        </motion.div>
+                    </div>
+
+                    {/* BOTTOM ROW: CPU & RAM (Stair Step 3: Right) */}
+                    <div className="w-full lg:w-[85%] ml-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* CPU */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                            className="relative"
+                        >
+                            {/* CPU */}
+                            <PillowCard
+                                shadowClassName="bg-purple-600/40"
+                                className="w-full h-full"
+                            >
+                                <div className="flex justify-between items-end mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div>
+                                            <h3 className="font-bold text-lg leading-none">CPU Load</h3>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-3xl font-black text-purple-500">{displayLatest.cpuUsage.toFixed(1)}%</span>
+                                        <p className="text-xs text-muted-foreground mt-1">Peak: {peaks.cpu.toFixed(1)}%</p>
+                                    </div>
+                                </div>
+                                <div className="h-8 w-full bg-secondary/50 rounded-full overflow-hidden shadow-inner ring-1 ring-black/5 dark:ring-white/5 p-1.5">
+                                    <motion.div
+                                        className="h-full bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full shadow-sm"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${Math.min(displayLatest.cpuUsage, 100)}%` }}
+                                        transition={{ type: "spring", stiffness: 50 }}
+                                    />
+                                </div>
+                            </PillowCard>
+                        </motion.div>
+
+                        {/* RAM */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                            className="relative"
+                        >
+                            {/* RAM */}
+                            <PillowCard
+                                shadowClassName="bg-pink-600/40"
+                                className="w-full h-full"
+                            >
+                                <div className="flex justify-between items-end mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div>
+                                            <h3 className="font-bold text-lg leading-none">RAM Usage</h3>
+                                            <span className="text-xs text-muted-foreground font-bold">{usedGB}GB / {maxGB}GB</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-3xl font-black text-pink-500">{memPercentage}%</span>
+                                        <p className="text-xs text-muted-foreground mt-1">Peak: {((peaks.ram / 1024 / 1024 / 1024) || 0).toFixed(1)}GB</p>
+                                    </div>
+                                </div>
+                                <div className="h-8 w-full bg-secondary/50 rounded-full overflow-hidden shadow-inner ring-1 ring-black/5 dark:ring-white/5 p-1.5">
+                                    <motion.div
+                                        className="h-full bg-gradient-to-r from-pink-400 to-rose-400 rounded-full shadow-sm"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${memPercentage}%` }}
+                                        transition={{ type: "spring", stiffness: 50 }}
+                                    />
+                                </div>
+                            </PillowCard>
+                        </motion.div>
+                    </div>
+
                 </div>
             </div>
         </section>

@@ -12,6 +12,8 @@ export const authConfig = {
                 token.id = user.id
                 // @ts-ignore
                 token.role = user.role
+                // @ts-ignore
+                token.minecraftUsername = user.minecraftUsername
             }
             return token
         },
@@ -20,6 +22,8 @@ export const authConfig = {
                 session.user.id = token.id as string
                 // @ts-ignore
                 session.user.role = token.role as string
+                // @ts-ignore
+                session.user.minecraftUsername = token.minecraftUsername as string | null
             }
             return session
         }

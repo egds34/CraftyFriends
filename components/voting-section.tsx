@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ExternalLink, Vote } from "lucide-react"
 import { motion } from "framer-motion"
+import { PillowCard } from "@/components/ui/pillow-card"
 
 export interface VoteSite {
     name: string
@@ -40,11 +41,25 @@ export function VotingSection({ sites }: VotingSectionProps) {
                                 href={site.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="group block"
+                                className="group block h-full"
                             >
-                                <div className="h-full bg-card/80 backdrop-blur-sm border border-transparent hover:border-primary/30 rounded-2xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-muted/80 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                                        {/* Placeholder for Logo - Just using first letter or generic icon */}
+                                <PillowCard
+                                    shadowClassName={`transition-colors duration-300 ${[
+                                        "bg-red-500/40",
+                                        "bg-orange-500/40",
+                                        "bg-amber-500/40",
+                                        "bg-emerald-500/40",
+                                        "bg-cyan-500/40",
+                                        "bg-blue-500/40",
+                                        "bg-violet-500/40",
+                                        "bg-purple-500/40",
+                                        "bg-pink-500/40"
+                                    ][index % 9]}`}
+                                    className="transition-transform duration-300 hover:-translate-y-1 h-full"
+                                    contentClassName="flex items-center gap-4 p-6"
+                                    shadowTop="top-5"
+                                >
+                                    <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
                                         <span className="text-xl font-bold text-muted-foreground group-hover:text-primary">
                                             {site.name.substring(0, 1).toUpperCase()}
                                         </span>
@@ -57,7 +72,7 @@ export function VotingSection({ sites }: VotingSectionProps) {
                                             Vote Now <ExternalLink className="w-3 h-3" />
                                         </span>
                                     </div>
-                                </div>
+                                </PillowCard>
                             </Link>
                         </motion.div>
                     ))}

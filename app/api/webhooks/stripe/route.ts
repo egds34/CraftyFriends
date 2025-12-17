@@ -272,6 +272,81 @@ export async function POST(req: Request) {
             }
         }
 
+        // 5. Product Created/Updated -> Sync to Database
+        if (event.type === "product.created" || event.type === "product.updated") {
+            const product = event.data.object as Stripe.Product
+
+            console.log(`[WEBHOOK] Processing ${event.type} for product: ${product.name}`)
+            console.log(`[WEBHOOK] Product Metadata:`, JSON.stringify(product.metadata, null, 2))
+
+            // Get the default price for this product
+            let priceAmount = 0
+            let stripePriceId: string | null = null
+
+            if (product.default_price) {
+                const priceId = typeof product.default_price === 'string'
+                    ? product.default_price
+                    : product.default_price.id
+
+                const price = await stripe.prices.retrieve(priceId)
+                priceAmount = price.unit_amount ? price.unit_amount / 100 : 0
+                stripePriceId = price.id
+            }
+
+            // Extract metadata
+            const category = product.metadata?.category || "misc"
+            const type = product.metadata?.type || "one-time"
+            const features = product.metadata?.features
+                ? JSON.parse(product.metadata.features)
+                : []
+            const summary = product.metadata?.summary || product.description || ""
+            const details = product.metadata?.details || product.description || ""
+            const isActive = product.metadata?.isActive === "false" ? false : true
+
+            console.log(`[WEBHOOK] Extracted - category: ${category}, type: ${type}, isActive: ${isActive}`)
+
+            await prisma.product.upsert({
+                where: { stripeProductId: product.id },
+                update: {
+                    name: product.name,
+                    description: product.description || "",
+                    price: priceAmount,
+                    stripePriceId: stripePriceId,
+                    category,
+                    type,
+                    features,
+                    active: product.active,
+                    metadata: {
+                        ...product.metadata,
+                        summary,
+                        details,
+                        isActive,
+                    } as any,
+                    updatedAt: new Date(),
+                },
+                create: {
+                    stripeProductId: product.id,
+                    stripePriceId: stripePriceId,
+                    name: product.name,
+                    description: product.description || "",
+                    price: priceAmount,
+                    category,
+                    type,
+                    features,
+                    active: product.active,
+                    metadata: {
+                        ...product.metadata,
+                        summary,
+                        details,
+                        isActive,
+                    } as any,
+                },
+            })
+
+            console.log(`[WEBHOOK] Product ${event.type} SUCCESS: ${product.name}`)
+            revalidatePath('/store')
+        }
+
     } catch (error: any) {
         console.error(`[WEBHOOK_HANDLER_ERROR] ${error.message}`)
         return new NextResponse(`Handler Error: ${error.message}`, { status: 500 })

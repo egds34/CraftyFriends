@@ -118,8 +118,8 @@ export async function POST(req: Request) {
                         quantity: 1,
                     },
                 ],
-                success_url: `${baseUrl}/dashboard?success=true`,
-                cancel_url: `${baseUrl}?canceled=true`,
+                success_url: `${process.env.NEXTAUTH_URL}/account?success=true`,
+                cancel_url: `${process.env.NEXTAUTH_URL}/account?canceled=true`,
                 metadata: {
                     userId: user.id,
                 },

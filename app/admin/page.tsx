@@ -5,7 +5,7 @@ import { redirect } from "next/navigation"
 export default async function AdminDashboardPage() {
     const session = await auth()
     // @ts-ignore
-    if (session?.user?.role !== 'ADMIN') return redirect("/dashboard")
+    if (session?.user?.role !== 'ADMIN') return redirect("/account")
 
     const users = await prisma.user.findMany({
         orderBy: { email: 'asc' },

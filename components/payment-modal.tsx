@@ -48,7 +48,7 @@ function CheckoutForm({ onSuccess, onError }: { onSuccess: () => void, onError: 
                 // However, confirmPayment usually redirects.
                 // To avoid redirect we need handleNextAction?
                 // Standard Element flow:
-                return_url: `${window.location.origin}/dashboard?payment_success=true`,
+                return_url: `${window.location.origin}/account?payment_success=true`,
             },
             redirect: "if_required"
         })
@@ -123,7 +123,7 @@ export function PaymentModal({ isOpen, onClose, tier, userEmail }: PaymentModalP
         // You would likely also want to trigger confetti here possibly
         setTimeout(() => {
             onClose()
-            window.location.href = "/dashboard" // Redirect to dashboard to see new status
+            window.location.href = "/account" // Redirect to account to see new status
         }, 3000)
     }
 

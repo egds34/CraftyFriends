@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 
-import { motion, useScroll, useTransform } from "framer-motion"
+import { motion, useScroll, useTransform, useAnimation } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { HeroBackground } from "@/components/hero-background"
@@ -12,6 +12,7 @@ import { ServerMetrics } from "@/components/server-metrics"
 import { CommunityGallery } from "@/components/community-gallery"
 import { VotingSection, VoteSite } from "@/components/voting-section"
 import { WhoWeAre } from "@/components/who-we-are"
+import Image from "next/image"
 
 interface LandingPageProps {
     bannerImages: string[]
@@ -43,13 +44,29 @@ export function LandingPage({ bannerImages, user, communityImages, votingSites }
     const bannerHeight = useTransform(scrollY, [0, range], ["100vh", "30vh"])
     const bannerY = useTransform(scrollY, [range, range * 2], [0, -range])
 
+    const logoControls = useAnimation()
+
     useEffect(() => {
         // Force scroll to top on load to ensure Hero animation is seen
         if ('scrollRestoration' in history) {
             history.scrollRestoration = 'manual';
         }
         window.scrollTo(0, 0);
-    }, []);
+
+        const sequence = async () => {
+            // 1. Rapid Coin Flip (Immediate)
+            await logoControls.start({
+                rotateY: [0, 2140], // Spin ~3 times and land at -20deg (Left)
+                transition: { duration: 3.0, ease: [0.22, 1, 0.36, 1] }
+            })
+            // 2. Idle Loop (Sway forever)
+            logoControls.start({
+                rotateY: [1060, 1100, 1060], // -20 -> 20 -> -20 (visual)
+                transition: { duration: 10, repeat: Infinity, ease: "easeInOut" }
+            })
+        }
+        sequence()
+    }, [logoControls]);
 
 
 
@@ -70,46 +87,72 @@ export function LandingPage({ bannerImages, user, communityImages, votingSites }
                     <HeroBackground images={bannerImages} />
 
                     {/* Overlay Content */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center gap-6 max-w-3xl mx-auto px-4 z-20">
-                        <motion.h1
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5 }}
-                            className="text-4xl font-heading font-extrabold tracking-tighter sm:text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60"
-                        >
-                            Crafty Friends Minecraft Server!
-                        </motion.h1>
-                        <motion.p
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.2 }}
-                            className="text-muted-foreground text-lg md:text-xl max-w-[600px] text-white/90 drop-shadow-md"
-                        >
-                            Join our premium community today. Unlock exclusive features, server access, and more with our subscription plans.
-                        </motion.p>
+                    <div className="absolute inset-0 flex flex-col md:flex-row items-center justify-center gap-12 md:gap-24 lg:gap-32 max-w-[1600px] mx-auto px-8 z-20">
+
+                        {/* Icon Left */}
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.4 }}
-                            className="flex gap-4"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.8, ease: "easeOut" }}
+                            className="shrink-0 order-1 md:order-1"
+                            style={{ perspective: 1000 }}
                         >
-                            <GetStartedButton user={user} />
-                            <Button
-                                size="lg"
-                                variant="outline"
-                                className="bg-background/50 hover:bg-background/70 border-white/20 text-white backdrop-blur-sm"
-                                onClick={(e) => {
-                                    e.preventDefault()
-                                    // Scroll to just past the hero section
-                                    window.scrollTo({
-                                        top: window.innerHeight,
-                                        behavior: 'smooth'
-                                    })
-                                }}
+                            <motion.div
+                                animate={logoControls}
+                                className="relative w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden shadow-2xl border-4 border-white/20"
                             >
-                                Learn More
-                            </Button>
+                                <Image
+                                    src="/images/logo.png"
+                                    alt="Crafty Friends Logo"
+                                    fill
+                                    className="object-cover"
+                                    priority
+                                />
+                            </motion.div>
                         </motion.div>
+
+                        {/* Text Right */}
+                        <div className="flex flex-col items-center md:items-center text-center md:text-center gap-6 order-2 md:order-2 max-w-2xl">
+                            <motion.h1
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.5 }}
+                                className="text-4xl font-heading font-extrabold tracking-tighter sm:text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 leading-tight"
+                            >
+                                Crafty Friends Minecraft Server!
+                            </motion.h1>
+                            <motion.p
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.5, delay: 0.2 }}
+                                className="text-muted-foreground text-lg md:text-xl text-white/90 drop-shadow-md"
+                            >
+                                Join our premium community today. Unlock exclusive features, server access, and more with our subscription plans.
+                            </motion.p>
+                            <motion.div
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.5, delay: 0.4 }}
+                                className="flex gap-4 justify-center md:justify-center w-full"
+                            >
+                                <GetStartedButton user={user} />
+                                <Button
+                                    size="lg"
+                                    variant="outline"
+                                    className="bg-background/50 hover:bg-background/70 border-white/20 text-white backdrop-blur-sm"
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        // Scroll to just past the hero section
+                                        window.scrollTo({
+                                            top: window.innerHeight,
+                                            behavior: 'smooth'
+                                        })
+                                    }}
+                                >
+                                    Learn More
+                                </Button>
+                            </motion.div>
+                        </div>
                     </div>
                 </div>
             </motion.div>

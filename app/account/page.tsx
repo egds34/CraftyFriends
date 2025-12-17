@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma"
 import { ProfileForm } from "./profile-form"
 import { SubscriptionButton } from "./subscription-button"
 import { redirect } from "next/navigation"
+import { DashboardSignOutButton } from "@/components/account/sign-out-button"
 import { DashboardRefresher } from "@/components/dashboard-refresher"
+import { PasswordSettings } from "@/components/account/password-settings"
 
 export default async function DashboardPage() {
     const session = await auth()
@@ -23,9 +25,12 @@ export default async function DashboardPage() {
     return (
         <div className="space-y-8">
             <DashboardRefresher userId={user.id} />
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-                <p className="text-muted-foreground">Manage your account and subscriptions.</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Account Details</h1>
+                    <p className="text-muted-foreground">Manage your account and subscriptions.</p>
+                </div>
+                <DashboardSignOutButton />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -42,6 +47,15 @@ export default async function DashboardPage() {
                         </div>
                         <ProfileForm initialUsername={user.minecraftUsername} />
                     </div>
+                </div>
+
+                {/* Password/Security Card */}
+                <div className="rounded-xl border bg-card text-card-foreground shadow p-6">
+                    <PasswordSettings
+                        hasPassword={!!user.password}
+                        isTwoFactorEnabled={user.isTwoFactorEnabled}
+                        hasAuthenticator={!!user.twoFactorSecret}
+                    />
                 </div>
 
                 {/* Membership Card */}
