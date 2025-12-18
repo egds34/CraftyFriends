@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Trophy, Search, Filter } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { AchievementBadge } from "./achievement-badge"
+import { AchievementCard } from "./achievement-card"
 
 interface Achievement {
     id: string
@@ -60,7 +61,7 @@ export function AchievementsView({ advancements }: AchievementsViewProps) {
                 </motion.div>
             </div>
 
-            <div className="container mx-auto px-4 py-8">
+            <div className="container mx-auto px-4 py-8 overflow-visible">
                 {/* Controls */}
                 <div className="flex flex-col md:flex-row gap-4 mb-8 items-center justify-between">
                     <div className="flex flex-wrap gap-2">
@@ -89,70 +90,15 @@ export function AchievementsView({ advancements }: AchievementsViewProps) {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[400px]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[400px] overflow-visible">
                     <AnimatePresence mode="popLayout">
-                        {filtered.map((adv, index) => {
-                            const col = index % 4;
-                            const row = Math.floor(index / 4);
-                            const diagonalIndex = row + col;
-
-                            return (
-                                <motion.div
-                                    layout
-                                    key={`${adv.id}-${filter}`}
-                                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                                    animate={{
-                                        opacity: 1,
-                                        y: 0,
-                                        scale: 1,
-                                        transition: {
-                                            type: "spring",
-                                            stiffness: 100,
-                                            damping: 15,
-                                            delay: 0.1 + Math.min(diagonalIndex * 0.05, 1.2)
-                                        }
-                                    }}
-                                    exit={{
-                                        opacity: 0,
-                                        scale: 0.9,
-                                        y: -10,
-                                        transition: {
-                                            duration: 0.2,
-                                            delay: Math.min(diagonalIndex * 0.03, 0.6)
-                                        }
-                                    }}
-                                    className="group relative bg-card border rounded-2xl p-4 shadow-sm hover:shadow-xl transition-shadow hover:-translate-y-1 overflow-hidden flex flex-col h-full"
-                                >
-                                    <div className="flex items-center gap-4 h-full">
-                                        <div className="relative shrink-0 flex items-center justify-center pt-1 pl-1">
-                                            <AchievementBadge
-                                                name={adv.name}
-                                                icon={adv.icon || "knowledge_book"}
-                                                frameType="task"
-                                                className="scale-125"
-                                            />
-                                        </div>
-                                        <div className="space-y-1 min-w-0 flex-1 pl-4 flex flex-col h-full justify-center">
-                                            <h3 className="font-bold text-sm leading-tight">{adv.name}</h3>
-                                            <p className="text-xs text-muted-foreground leading-snug line-clamp-2">{adv.description}</p>
-
-                                            <div className="flex justify-between items-center mt-1">
-                                                {adv.unlockedAt ? (
-                                                    <p className="text-[10px] text-primary font-bold">
-                                                        Obtained {new Date(adv.unlockedAt).toLocaleDateString()}
-                                                    </p>
-                                                ) : (
-                                                    <div />
-                                                )}
-                                                <span className="text-[10px] text-muted-foreground">
-                                                    {((adv.completedCount / (adv.totalPlayers || 1)) * 100).toFixed(0)}% of players
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
+                        {filtered.map((adv, index) => (
+                            <AchievementCard
+                                key={`${adv.id}-${filter}`}
+                                achievement={adv}
+                                index={index}
+                            />
+                        ))}
                     </AnimatePresence>
                 </div>
                 {filtered.length === 0 && (

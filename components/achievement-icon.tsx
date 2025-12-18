@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 interface AchievementIconProps {
     name: string
@@ -9,7 +9,7 @@ interface AchievementIconProps {
     size?: "sm" | "md" | "lg"
 }
 
-export function AchievementIcon({ name, icon, className = "", size = "md" }: AchievementIconProps) {
+export function AchievementIcon({ name, icon, className = "", size = "md", onIconResolved }: AchievementIconProps & { onIconResolved?: (src: string) => void }) {
     const defaultIcon = "https://minecraft.wiki/images/Invicon_Knowledge_Book.png"
 
     // 1. Determine Local File Extension
@@ -27,6 +27,11 @@ export function AchievementIcon({ name, icon, className = "", size = "md" }: Ach
 
     const [src, setSrc] = useState(localSrc)
     const [hasFallenBackToWiki, setHasFallenBackToWiki] = useState(false)
+
+    // Notify parent of the initial source or updates
+    useEffect(() => {
+        onIconResolved?.(src)
+    }, [src, onIconResolved])
 
     const handleError = () => {
         if (!hasFallenBackToWiki) {

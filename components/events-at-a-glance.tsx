@@ -8,14 +8,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Badge } from "@/components/ui/badge"
 import { Button } from "./ui/button"
 
+interface EventInfo {
+    title: string;
+    description: string;
+    icon: string;
+    howTo: string[];
+    rules: string[];
+}
+
 interface EventsAtAGlanceProps {
     events: Event[]
-    eventTemplates: any[]
+    eventTemplates: EventInfo[]
 }
 
 export function EventsAtAGlance({ events, eventTemplates }: EventsAtAGlanceProps) {
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
-    const [selectedInfo, setSelectedInfo] = useState<any | null>(null)
+    const [selectedInfo, setSelectedInfo] = useState<EventInfo | null>(null)
 
     const matchingInfo = selectedEvent ? eventTemplates?.find(info =>
         selectedEvent.title.toLowerCase().includes(info.title.toLowerCase().split(' ')[0]) ||

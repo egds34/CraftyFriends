@@ -7,6 +7,7 @@ import { DashboardSignOutButton } from "@/components/account/sign-out-button"
 import { DashboardRefresher } from "@/components/dashboard-refresher"
 import { PasswordSettings } from "@/components/account/password-settings"
 import { AchievementBadge } from "@/components/achievement-badge"
+import { ProfileCharacterPreview } from "@/components/profile-character-preview"
 
 export default async function DashboardPage() {
     const session = await auth()
@@ -44,17 +45,25 @@ export default async function DashboardPage() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {/* Profile Card */}
-                <div className="rounded-xl border bg-card text-card-foreground shadow p-6">
-                    <div className="flex flex-col space-y-1.5 mb-4">
-                        <h3 className="font-semibold leading-none tracking-tight">Profile</h3>
-                        <p className="text-sm text-muted-foreground">Your personal information</p>
-                    </div>
-                    <div className="space-y-4">
-                        <div className="grid gap-1">
-                            <span className="text-sm font-medium">Email</span>
-                            <span className="text-sm text-muted-foreground">{user.email}</span>
+                <div className="rounded-xl border bg-card text-card-foreground shadow p-6 lg:col-span-2">
+                    <div className="flex flex-col md:flex-row gap-8">
+                        <div className="flex-1 space-y-4">
+                            <div className="flex flex-col space-y-1.5 mb-4">
+                                <h3 className="font-semibold leading-none tracking-tight">Profile</h3>
+                                <p className="text-sm text-muted-foreground">Your personal information</p>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="grid gap-1">
+                                    <span className="text-sm font-medium">Email</span>
+                                    <span className="text-sm text-muted-foreground">{user.email}</span>
+                                </div>
+                                <ProfileForm initialUsername={user.minecraftUsername} />
+                            </div>
                         </div>
-                        <ProfileForm initialUsername={user.minecraftUsername} />
+
+                        {user.minecraftUsername && (
+                            <ProfileCharacterPreview username={user.minecraftUsername} />
+                        )}
                     </div>
                 </div>
 
