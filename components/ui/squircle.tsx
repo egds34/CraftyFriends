@@ -3,25 +3,37 @@
 import React, { useState, useEffect, useRef } from "react"
 import { getSvgPath } from "figma-squircle"
 
-interface SquircleProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface SquircleProps extends React.HTMLAttributes<HTMLDivElement> {
     cornerRadius?: number
+    topLeftRadius?: number
+    topRightRadius?: number
+    bottomLeftRadius?: number
+    bottomRightRadius?: number
     cornerSmoothing?: number
 }
 
-export function Squircle({
-    children,
-    cornerRadius = 20,
-    cornerSmoothing = 1,
-    className,
-    style,
-    ...props
-}: SquircleProps) {
-    const containerRef = useRef<HTMLDivElement>(null)
+export const Squircle = React.forwardRef<HTMLDivElement, SquircleProps>((
+    {
+        children,
+        cornerRadius = 20,
+        topLeftRadius,
+        topRightRadius,
+        bottomLeftRadius,
+        bottomRightRadius,
+        cornerSmoothing = 1,
+        className,
+        style,
+        ...props
+    },
+    ref
+) => {
+    const internalRef = useRef<HTMLDivElement>(null)
     const [path, setPath] = useState("")
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
 
     useEffect(() => {
-        if (!containerRef.current) return
+        const node = internalRef.current
+        if (!node) return
 
         const observer = new ResizeObserver((entries) => {
             for (const entry of entries) {
@@ -30,10 +42,9 @@ export function Squircle({
             }
         })
 
-        observer.observe(containerRef.current)
+        observer.observe(node)
 
-        // Initial measurement
-        const rect = containerRef.current.getBoundingClientRect()
+        const rect = node.getBoundingClientRect()
         setDimensions({ width: rect.width, height: rect.height })
 
         return () => observer.disconnect()
@@ -46,15 +57,28 @@ export function Squircle({
             width: dimensions.width,
             height: dimensions.height,
             cornerRadius,
+            topLeftCornerRadius: topLeftRadius,
+            topRightCornerRadius: topRightRadius,
+            bottomLeftCornerRadius: bottomLeftRadius,
+            bottomRightCornerRadius: bottomRightRadius,
             cornerSmoothing,
         })
         setPath(svgPath)
-    }, [dimensions, cornerRadius, cornerSmoothing])
+    }, [dimensions, cornerRadius, cornerSmoothing, topLeftRadius, topRightRadius, bottomLeftRadius, bottomRightRadius])
 
     return (
         <div
-            ref={containerRef}
-            className="w-full h-full relative" // Wrapper ensures dimensions are captured
+            ref={(node) => {
+                // Handle both the forwarded ref and our internal ref
+                // @ts-ignore
+                internalRef.current = node
+                if (typeof ref === "function") {
+                    ref(node)
+                } else if (ref) {
+                    ref.current = node
+                }
+            }}
+            className="w-full h-full relative"
         >
             <div
                 className={className}
@@ -68,4 +92,6 @@ export function Squircle({
             </div>
         </div>
     )
-}
+})
+
+Squircle.displayName = "Squircle"

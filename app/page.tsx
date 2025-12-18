@@ -65,11 +65,19 @@ function getVotingSites(): VoteSite[] {
   ]
 }
 
+import { getEvents, getEventTypeInfos } from "@/app/actions/events"
+
+// ...
+
 export default async function Home() {
   const bannerImages = await getBannerImages()
   const communityImages = await getCommunityImages()
   const votingSites = getVotingSites()
   const session = await auth()
+  const eventsResult = await getEvents()
+  const templatesResult = await getEventTypeInfos()
+  const events = eventsResult.success && eventsResult.data ? eventsResult.data : []
+  const templates = templatesResult.success && templatesResult.data ? templatesResult.data : []
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -78,6 +86,8 @@ export default async function Home() {
         user={session?.user}
         communityImages={communityImages}
         votingSites={votingSites}
+        events={events}
+        eventTemplates={templates}
       />
       <footer className="py-6 border-t bg-background">
         <div className="container flex flex-col items-center justify-center gap-6 px-4 mx-auto">

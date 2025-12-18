@@ -68,10 +68,10 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
     return (
         <>
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                initial={{ scale: 0.8, y: 50 }}
+                whileInView={{ scale: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ type: "spring", stiffness: 260, damping: 20, delay: index * 0.2 }}
                 className="group h-full"
             >
                 <PillowCard

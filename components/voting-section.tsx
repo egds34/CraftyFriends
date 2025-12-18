@@ -32,10 +32,10 @@ export function VotingSection({ sites }: VotingSectionProps) {
                     {sites.map((site, index) => (
                         <motion.div
                             key={index}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: index * 0.1 }}
+                            initial={{ scale: 0.8, y: 50 }}
+                            whileInView={{ scale: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.3 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 20, delay: index * 0.1 }}
                         >
                             <Link
                                 href={site.url}
@@ -44,6 +44,7 @@ export function VotingSection({ sites }: VotingSectionProps) {
                                 className="group block h-full"
                             >
                                 <PillowCard
+                                    noHover
                                     shadowClassName={`transition-colors duration-300 ${[
                                         "bg-red-500/40",
                                         "bg-orange-500/40",
@@ -55,7 +56,7 @@ export function VotingSection({ sites }: VotingSectionProps) {
                                         "bg-purple-500/40",
                                         "bg-pink-500/40"
                                     ][index % 9]}`}
-                                    className="transition-transform duration-300 hover:-translate-y-1 h-full"
+                                    className="transition-transform duration-300 h-full"
                                     contentClassName="flex items-center gap-4 p-6"
                                     shadowTop="top-5"
                                 >

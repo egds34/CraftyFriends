@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Heart, HeartCrack } from "lucide-react";
 import Pusher from "pusher-js";
 import { PillowCard } from "@/components/ui/pillow-card";
+import { UptimeCounter } from "@/components/uptime-counter";
 
 
 interface Metric {
@@ -53,7 +54,6 @@ const CustomAxisTick = (props: any) => {
 export function ServerMetrics() {
     const [data, setData] = useState<Metric[]>([]);
     const [latest, setLatest] = useState<Metric | null>(null);
-    const [now, setNow] = useState<number>(Date.now());
     const [timeRange, setTimeRange] = useState<'1m' | '1h' | '24h'>('1m');
     const timeRangeRef = useRef(timeRange);
 
@@ -63,11 +63,6 @@ export function ServerMetrics() {
 
     // CACHE
     const cache = useRef<{ [key: string]: { data: Metric[], timestamp: number } }>({});
-
-    useEffect(() => {
-        const timer = setInterval(() => setNow(Date.now()), 1000);
-        return () => clearInterval(timer);
-    }, []);
 
     // Fetch Data
     useEffect(() => {
@@ -154,7 +149,11 @@ export function ServerMetrics() {
     }, []); // Empty dependency array = Single subscription that persists!
 
     // Throttle graph updates
-    const graphNow = timeRange === '1m' ? now : (Math.floor(now / 60000) * 60000);
+    // Graph 'now' - simply use latest data point or current time, but don't state-update it every second
+    const graphNow = useMemo(() => {
+        if (data.length > 0) return new Date(data[data.length - 1].timestamp).getTime();
+        return Date.now();
+    }, [data]);
 
     const finalChartData = useMemo(() => {
         let duration = 60 * 1000;
@@ -273,7 +272,7 @@ export function ServerMetrics() {
     let isLive = false;
     if (rawLatest) {
         const lastTime = new Date(rawLatest.timestamp).getTime();
-        const diff = now - lastTime;
+        const diff = Date.now() - lastTime;
         // 1m view: expects 1s updates (allow 5s slack)
         // History views: expects 60s updates (allow 90s slack)
         const threshold = timeRange === '1m' ? 5000 : 90000;
@@ -389,13 +388,14 @@ export function ServerMetrics() {
                         {/* Status Card (2 cols) */}
                         {/* Status Card (2 cols) */}
                         <motion.div
-                            initial={{ opacity: 0, x: -50 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: 0.2 }}
+                            initial={{ scale: 0.8, y: 50 }}
+                            whileInView={{ scale: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.3 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 20 }}
                             className="lg:col-span-2 relative h-full min-h-[250px]"
                         >
                             <PillowCard
+                                noHover
                                 shadowClassName={displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown'
                                     ? 'bg-emerald-500/40'
                                     : 'bg-red-500/40'}
@@ -430,14 +430,12 @@ export function ServerMetrics() {
                                 <div className="space-y-1">
                                     <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Uptime</p>
                                     <p className="text-2xl font-black text-foreground font-heading">
-                                        {(() => {
-                                            const start = Number(displayLatest.startTime);
-                                            if (start <= 0 || displayLatest.status === 'OFFLINE' || displayLatest.status === 'shutdown') return 'Sleeping...';
-                                            const diff = Math.max(0, now - start);
-                                            const hours = Math.floor(diff / (1000 * 60 * 60));
-                                            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                                            return `${hours}h ${minutes}m`;
-                                        })()}
+                                        {displayLatest ? (
+                                            <UptimeCounter
+                                                startTime={displayLatest.startTime}
+                                                status={displayLatest.status}
+                                            />
+                                        ) : '...'}
                                     </p>
                                 </div>
                             </PillowCard>
@@ -445,13 +443,14 @@ export function ServerMetrics() {
 
                         {/* TPS Card (3 cols) */}
                         <motion.div
-                            initial={{ opacity: 0, x: 50 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: 0.2 }}
+                            initial={{ scale: 0.8, y: 50 }}
+                            whileInView={{ scale: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.3 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
                             className="lg:col-span-3 h-full relative"
                         >
                             <PillowCard
+                                noHover
                                 shadowClassName="bg-amber-600/40"
                                 contentClassName="flex flex-col justify-between"
                                 className="w-full h-full"
@@ -509,13 +508,14 @@ export function ServerMetrics() {
                     {/* MIDDLE ROW: Network Graph (Stair Step 2: Center) */}
                     <div className="w-full lg:w-[85%] mx-auto">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: 0.2 }}
+                            initial={{ scale: 0.8, y: 50 }}
+                            whileInView={{ scale: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.3 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
                             className="relative"
                         >
                             <PillowCard
+                                noHover
                                 shadowClassName="bg-sky-600/40"
                                 className="w-full"
                             >
@@ -585,14 +585,14 @@ export function ServerMetrics() {
                     <div className="w-full lg:w-[85%] ml-auto grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* CPU */}
                         <motion.div
-                            initial={{ opacity: 0, x: -50 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: 0.2 }}
+                            initial={{ scale: 0.8, y: 50 }}
+                            whileInView={{ scale: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.3 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 20 }}
                             className="relative"
                         >
-                            {/* CPU */}
                             <PillowCard
+                                noHover
                                 shadowClassName="bg-purple-600/40"
                                 className="w-full h-full"
                             >
@@ -620,14 +620,14 @@ export function ServerMetrics() {
 
                         {/* RAM */}
                         <motion.div
-                            initial={{ opacity: 0, x: 50 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: 0.2 }}
+                            initial={{ scale: 0.8, y: 50 }}
+                            whileInView={{ scale: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.3 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
                             className="relative"
                         >
-                            {/* RAM */}
                             <PillowCard
+                                noHover
                                 shadowClassName="bg-pink-600/40"
                                 className="w-full h-full"
                             >

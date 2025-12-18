@@ -10,7 +10,7 @@ import { NavbarAuthButtons } from "@/components/navbar-auth"
 import { UserNav } from "@/components/user-nav"
 import { User } from "next-auth"
 import { useCart } from "@/components/providers/cart-provider"
-import { ShoppingCart, Trophy, BarChart3, Map as MapIcon } from "lucide-react"
+import { ShoppingCart, Trophy, BarChart3, Map as MapIcon, CalendarDays } from "lucide-react"
 
 function CartBadge() {
     const { items } = useCart()
@@ -111,6 +111,13 @@ export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
                         >
                             <Trophy className="w-4 h-4" />
                             Shop
+                        </Link>
+                        <Link
+                            href="/events"
+                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
+                        >
+                            <CalendarDays className="w-4 h-4" />
+                            Events
                         </Link>
                         <Link
                             href="/leaderboard"

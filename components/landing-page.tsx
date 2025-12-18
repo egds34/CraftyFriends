@@ -12,19 +12,21 @@ import { ServerMetrics } from "@/components/server-metrics"
 import { CommunityGallery } from "@/components/community-gallery"
 import { VotingSection, VoteSite } from "@/components/voting-section"
 import { WhoWeAre } from "@/components/who-we-are"
+import { EventsAtAGlance } from "@/components/events-at-a-glance"
 import Image from "next/image"
+
+import { Event } from "@prisma/client"
 
 interface LandingPageProps {
     bannerImages: string[]
     user?: User
     communityImages: string[]
     votingSites: VoteSite[]
+    events: Event[]
+    eventTemplates: any[]
 }
 
-export function LandingPage({ bannerImages, user, communityImages, votingSites }: LandingPageProps) {
-    // ... existing state ...
-    // ... existing state ...
-
+export function LandingPage({ bannerImages, user, communityImages, votingSites, events, eventTemplates }: LandingPageProps) {
     const [viewportHeight, setViewportHeight] = useState(0)
 
     useEffect(() => {
@@ -67,8 +69,6 @@ export function LandingPage({ bannerImages, user, communityImages, votingSites }
         }
         sequence()
     }, [logoControls]);
-
-
 
     return (
         <main className="flex-1">
@@ -164,6 +164,7 @@ export function LandingPage({ bannerImages, user, communityImages, votingSites }
             <div className="relative z-10 bg-background">
                 <WhoWeAre />
                 <ServerMetrics />
+                <EventsAtAGlance events={events} eventTemplates={eventTemplates} />
 
                 {/* Community & Voting Layers */}
                 <CommunityGallery images={communityImages} />
