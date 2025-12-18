@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { getLeaderboardData, LeaderboardCategory } from "@/app/leaderboard/actions"
 import { SkinViewer } from "@/components/skin-viewer"
 import { ChevronDown, Search } from "lucide-react"
+import { PillowCard } from "@/components/ui/pillow-card"
 
 export function LeaderboardView() {
     const [categories, setCategories] = useState<LeaderboardCategory[]>([])
@@ -39,11 +40,22 @@ export function LeaderboardView() {
                 <p className="text-lg text-muted-foreground">Top players across various categories</p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <motion.div
+                className="grid gap-8 xl:gap-10 px-4 md:grid-cols-2 xl:grid-cols-3"
+                initial="hidden"
+                animate="show"
+                variants={{
+                    hidden: { opacity: 0 },
+                    show: {
+                        opacity: 1,
+                        transition: { staggerChildren: 0.15 }
+                    }
+                }}
+            >
                 {categories.map((category, index) => (
                     <LeaderboardCard key={category.statId} category={category} index={index} />
                 ))}
-            </div>
+            </motion.div>
         </div>
     )
 }
@@ -51,9 +63,25 @@ export function LeaderboardView() {
 function LeaderboardCard({ category, index }: { category: LeaderboardCategory, index: number }) {
     const topPlayer = category.topPlayers[0]
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+    const [isHovered, setIsHovered] = useState(false)
     const [zIndex, setZIndex] = useState(1)
     const [searchQuery, setSearchQuery] = useState("")
     const drawerRef = useRef<HTMLDivElement>(null)
+    // Trigger wobble on load/enter
+    const [forceWobble, setForceWobble] = useState(false)
+
+    // Vibrant pastel colors for the cards
+    const colors = [
+        { bg: "bg-rose-500/20", hover: "hover:bg-rose-500/30", text: "text-rose-600", ring: "focus:ring-rose-500/50" },
+        { bg: "bg-orange-500/20", hover: "hover:bg-orange-500/30", text: "text-orange-600", ring: "focus:ring-orange-500/50" },
+        { bg: "bg-amber-500/20", hover: "hover:bg-amber-500/30", text: "text-amber-600", ring: "focus:ring-amber-500/50" },
+        { bg: "bg-emerald-500/20", hover: "hover:bg-emerald-500/30", text: "text-emerald-600", ring: "focus:ring-emerald-500/50" },
+        { bg: "bg-cyan-500/20", hover: "hover:bg-cyan-500/30", text: "text-cyan-600", ring: "focus:ring-cyan-500/50" },
+        { bg: "bg-blue-500/20", hover: "hover:bg-blue-500/30", text: "text-blue-600", ring: "focus:ring-blue-500/50" },
+        { bg: "bg-violet-500/20", hover: "hover:bg-violet-500/30", text: "text-violet-600", ring: "focus:ring-violet-500/50" },
+        { bg: "bg-fuchsia-500/20", hover: "hover:bg-fuchsia-500/30", text: "text-fuchsia-600", ring: "focus:ring-fuchsia-500/50" },
+    ]
+    const color = colors[index % colors.length]
 
     // Click outside to close
     useEffect(() => {
@@ -89,7 +117,12 @@ function LeaderboardCard({ category, index }: { category: LeaderboardCategory, i
     }, [isDrawerOpen])
 
     useEffect(() => {
-        if (isDrawerOpen) setZIndex(50)
+        if (isDrawerOpen) {
+            setZIndex(50)
+        } else {
+            // Drop to intermediate z-index while closing so opened drawers (50) cover us
+            setZIndex(prev => prev === 50 ? 20 : prev)
+        }
     }, [isDrawerOpen])
 
     // Filter players for the drawer (excluding top 3)
@@ -98,21 +131,36 @@ function LeaderboardCard({ category, index }: { category: LeaderboardCategory, i
         p.username.toLowerCase().includes(searchQuery.toLowerCase())
     ).slice(0, 10)
 
+    const wobbleKeyframes = {
+        scaleX: [1, 1.08, 0.95, 1.02, 0.99, 1],
+        scaleY: [1, 0.92, 1.05, 0.98, 1.01, 1],
+        x: [0, -2, 2, -1, 1, 0],
+    };
+
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            variants={{
+                hidden: { opacity: 0, y: 20 },
+                show: { opacity: 1, y: 0 }
+            }}
+            onAnimationComplete={() => {
+                setForceWobble(true)
+                setTimeout(() => setForceWobble(false), 1000)
+            }}
             className="flex h-48 relative group"
             style={{ zIndex }}
         >
             {/* Left: 3D Head Viewer (Rank 1) */}
-            <div className="w-1/3 relative flex items-center justify-center z-10">
-                <div className="absolute w-[140%] h-[140%] flex items-center justify-center">
+            {/* Left: 3D Head Viewer (Rank 1) - Tucked behind */}
+            <div
+                className="absolute left-0 top-0 bottom-0 w-40 flex items-center justify-center z-0 cursor-pointer"
+                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+            >
+                <div className="absolute w-[150%] h-[150%] flex items-center justify-center -translate-x-2 -translate-y-14">
                     <SkinViewer
                         username={topPlayer.username}
                         animation="idle"
-                        zoom={1.1} // Reduced zoom
+                        zoom={1}
                         rotation={30}
                         mouseTracking={true}
                         className="pointer-events-none"
@@ -121,102 +169,129 @@ function LeaderboardCard({ category, index }: { category: LeaderboardCategory, i
             </div>
 
             {/* Right: Top 3 List */}
-            <div className="flex-1 flex flex-col min-w-0 relative bg-card border rounded-xl pb-6">
-                <div className="p-4 flex-1 flex flex-col min-h-0 flex-shrink-0">
-                    <h3 className="font-bold text-lg capitalize mb-3 text-primary truncate" title={category.displayName}>
-                        {category.displayName}
-                    </h3>
-
-                    <div className="flex-1 overflow-y-auto pr-1 space-y-2 scrollbar-thin scrollbar-thumb-muted-foreground/20">
-                        {category.topPlayers.slice(0, 3).map((player, idx) => (
-                            <div key={player.username} className={`flex justify-between items-center text-sm ${idx === 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                    <span className={`w-4 text-xs ${idx === 0 ? 'text-yellow-500' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-orange-700' : 'opacity-50'}`}>
-                                        {idx + 1}
-                                    </span>
-                                    <span className="truncate">{player.username}</span>
-                                </div>
-                                <span className="font-mono text-xs opacity-80">{player.value.toLocaleString()}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Drawer Assembly */}
-                <div
-                    ref={drawerRef}
-                    className="absolute top-[calc(100%-1.5rem)] left-0 right-0 z-20 flex flex-col pointer-events-none"
+            <div
+                ref={drawerRef}
+                className="flex-1 ml-20 flex flex-col min-w-0 relative pb-6 z-10 group/card"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >
+                {/* Shadow Drawer (Acts as background shadow + drawer) */}
+                <motion.div
+                    onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                    layout
+                    onAnimationComplete={() => !isDrawerOpen && setZIndex(1)}
+                    initial={false}
+                    animate={{
+                        height: isDrawerOpen ? "auto" : "calc(100% - 3.75rem)",
+                        scale: (isHovered && !isDrawerOpen) || forceWobble ? 1.03 : 1,
+                        ...((isHovered && !isDrawerOpen) || forceWobble ? wobbleKeyframes : { scaleX: 1, scaleY: 1, x: 0 })
+                    }}
+                    transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 30,
+                        scaleX: { duration: 0.8, ease: "circOut" },
+                        scaleY: { duration: 0.9, ease: "circOut" },
+                        x: { duration: 0.8, ease: "easeInOut" }
+                    }}
+                    className={`absolute top-12 left-1 right-1 backdrop-blur-md rounded-[40px] z-[-1] flex flex-col overflow-hidden cursor-pointer transition-colors ${color.bg} ${color.hover}`}
                 >
+                    {/* Spacer to push content below the main card area */}
+                    {/* Parent is h-48 + pb-6 (1.5rem) = 12rem + 1.5rem. 
+                        Top-12 is 3rem. 
+                        We want spacer to fill the area 'behind' the card so drawer starts below. 
+                        Spacer H = (100% parent - pb-6) - top-12? 
+                        Let's just use a flexible spacer that fills remaining height in closed state.
+                    */}
+                    <div className="flex-1 min-h-[calc(11rem)] w-full" />
+
                     {/* Drawer Content */}
-                    <AnimatePresence onExitComplete={() => setZIndex(1)}>
+                    <AnimatePresence>
                         {isDrawerOpen && (
                             <motion.div
-                                key="drawer-content"
-                                initial={{ height: 0 }}
-                                animate={{ height: 'auto' }}
-                                exit={{ height: 0 }}
-                                transition={{ duration: 0.3, ease: "easeInOut" }}
-                                className="bg-card border-x border-b shadow-xl overflow-hidden pointer-events-auto -mt-[1px]"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="px-3 pb-8 pt-0 flex flex-col gap-2"
                             >
-                                <div className="flex flex-col flex-shrink-0">
-                                    <div className="p-3 bg-muted/30 border-t">
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                placeholder="Search players..."
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                className="w-full pl-8 pr-3 py-1.5 text-xs bg-background border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
-                                                autoFocus
-                                            />
-                                            <Search className="absolute left-2.5 top-1.5 w-3.5 h-3.5 text-muted-foreground" />
-                                        </div>
-                                    </div>
+                                <div className="relative" onClick={(e) => e.stopPropagation()}>
+                                    <input
+                                        type="text"
+                                        placeholder="Search..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className={`w-full pl-8 pr-3 py-1.5 text-xs bg-background/40 border-none rounded-2xl focus:outline-none focus:ring-2 placeholder:text-muted-foreground/70 ${color.ring}`}
+                                        autoFocus
+                                    />
+                                    <Search className="absolute left-2.5 top-1.5 w-3.5 h-3.5 text-muted-foreground" />
+                                </div>
 
-                                    <div className="max-h-48 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-muted-foreground/20">
-                                        {filteredPlayers.length > 0 ? (
-                                            filteredPlayers.map((player, idx) => {
-                                                const rank = 4 + idx;
-                                                return (
-                                                    <div key={player.username} className="flex justify-between items-center text-xs px-2 py-1 rounded hover:bg-muted/50">
-                                                        <div className="flex items-center gap-2 overflow-hidden">
-                                                            <span className="w-5 text-muted-foreground opacity-70">
-                                                                #{rank}
-                                                            </span>
-                                                            <span className="truncate font-medium">{player.username}</span>
-                                                        </div>
-                                                        <span className="font-mono text-muted-foreground">{player.value.toLocaleString()}</span>
+                                <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-none" onClick={(e) => e.stopPropagation()}>
+                                    {filteredPlayers.length > 0 ? (
+                                        filteredPlayers.map((player, idx) => {
+                                            const rank = 4 + idx;
+                                            return (
+                                                <div key={player.username} className="flex justify-between items-center text-xs px-3 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                                                    <div className="flex items-center gap-2 overflow-hidden">
+                                                        <span className="w-5 text-muted-foreground opacity-70">
+                                                            #{rank}
+                                                        </span>
+                                                        <span className="truncate font-medium">{player.username}</span>
                                                     </div>
-                                                )
-                                            })
-                                        ) : (
-                                            <div className="text-center py-4 text-xs text-muted-foreground">
-                                                No players found
-                                            </div>
-                                        )}
-                                    </div>
+                                                    <span className="font-mono text-muted-foreground">{player.value.toLocaleString()}</span>
+                                                </div>
+                                            )
+                                        })
+                                    ) : (
+                                        <div className="text-center py-4 text-xs text-muted-foreground">
+                                            No players found
+                                        </div>
+                                    )}
                                 </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
 
-                    {/* Bottom Bar Trigger */}
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setIsDrawerOpen(!isDrawerOpen);
-                        }}
-                        className={`w-full h-6 bg-muted hover:bg-muted/80 text-muted-foreground flex items-center justify-center border-t transition-colors pointer-events-auto ${isDrawerOpen ? 'rounded-b-xl border delay-0' : 'rounded-b-xl'}`}
-                    >
-                        <motion.div
-                            animate={{ rotate: isDrawerOpen ? 180 : 0 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <ChevronDown className="w-4 h-4" />
-                        </motion.div>
-                    </button>
-                </div>
+                    {/* Handle Indicator (Subtle) */}
+                    {/* Handle Indicator (Subtle) */}
+                    <div className={`absolute bottom-1 w-full flex justify-center gap-1 ${color.text}`}>
+                        <div className="w-[3px] h-[3px] rounded-full bg-current opacity-80" />
+                        <div className="w-[3px] h-[3px] rounded-full bg-current opacity-80" />
+                        <div className="w-[3px] h-[3px] rounded-full bg-current opacity-80" />
+                    </div>
+                </motion.div>
+
+                <PillowCard
+                    className="h-full w-full relative z-10 cursor-pointer"
+                    contentClassName="p-0"
+                    shadowClassName="hidden"
+                    onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                    {...{ animate: isHovered ? "hover" : "visible" } as any}
+                >
+                    <div className="px-6 py-4 flex-1 flex flex-col min-h-0 flex-shrink-0 h-full">
+                        <h3 className={`font-bold text-lg capitalize mb-3 truncate text-center ${color.text}`} title={category.displayName}>
+                            {category.displayName}
+                        </h3>
+
+                        <div className="flex-1 overflow-y-auto pr-1 space-y-2 scrollbar-thin scrollbar-thumb-muted-foreground/20">
+                            {category.topPlayers.slice(0, 3).map((player, idx) => (
+                                <div key={player.username} className={`flex justify-between items-center text-sm ${idx === 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <span className={`w-4 text-xs ${idx === 0 ? 'text-yellow-500' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-orange-700' : 'opacity-50'}`}>
+                                            {idx + 1}
+                                        </span>
+                                        <span className="truncate">{player.username}</span>
+                                    </div>
+                                    <span className="font-mono text-xs opacity-80">{player.value.toLocaleString()}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </PillowCard>
+
+                {/* Drawer Assembly */}
+                {/* Drawer Assembly Removed - Replaced by ShadowDrawer */}
             </div>
-        </motion.div>
+        </motion.div >
     )
 }
