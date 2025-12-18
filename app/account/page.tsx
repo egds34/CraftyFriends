@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 import { DashboardSignOutButton } from "@/components/account/sign-out-button"
 import { DashboardRefresher } from "@/components/dashboard-refresher"
 import { PasswordSettings } from "@/components/account/password-settings"
+import { AchievementBadge } from "@/components/achievement-badge"
 
 export default async function DashboardPage() {
     const session = await auth()
@@ -21,6 +22,14 @@ export default async function DashboardPage() {
 
     const membershipSub = user.subscriptions.find(sub => sub.category === 'membership' || !sub.category)
     const addonSubs = user.subscriptions.filter(sub => sub.category === 'addon')
+
+    // Fetch user achievements
+    const userAdvancements = user.minecraftUsername ? await prisma.userAdvancement.findMany({
+        where: { username: user.minecraftUsername, done: true },
+        include: { advancement: true },
+        orderBy: { updatedAt: 'desc' },
+        take: 12 // Just show latest or a summary
+    }) : []
 
     return (
         <div className="space-y-8">
@@ -116,6 +125,49 @@ export default async function DashboardPage() {
                         </div>
                     </div>
                 )}
+
+                {/* Achievements Card */}
+                <div className="rounded-xl border bg-card text-card-foreground shadow p-6 md:col-span-2 lg:col-span-3">
+                    <div className="flex flex-col space-y-1.5 mb-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="font-semibold leading-none tracking-tight">Recent Advancements</h3>
+                                <p className="text-sm text-muted-foreground">Your progress on Crafty Friends</p>
+                            </div>
+                            <a href="/advancements" className="text-sm font-medium text-primary hover:underline">View All</a>
+                        </div>
+                    </div>
+
+                    {userAdvancements.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                            {userAdvancements.map((ua: any) => (
+                                <div key={ua.id} className="group relative flex flex-col items-center gap-2">
+                                    <AchievementBadge
+                                        name={ua.advancement.name}
+                                        icon={ua.advancement.icon || "knowledge_book"}
+                                        frameType="task" // Default to task for now
+                                        className="transition-transform group-hover:scale-110 duration-200"
+                                    />
+                                    <span className="text-[10px] font-bold text-center truncate w-full px-1">{ua.advancement.name}</span>
+
+                                    {/* Tooltip-like effect on hover */}
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-popover text-popover-foreground text-[10px] rounded shadow-lg border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap">
+                                        {ua.advancement.name}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 bg-muted/30 rounded-xl border border-dashed">
+                            <p className="text-sm text-muted-foreground">
+                                {user.minecraftUsername
+                                    ? "No achievements unlocked yet. Keep playing!"
+                                    : "Link your Minecraft username to see your achievements."
+                                }
+                            </p>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     )

@@ -3,20 +3,23 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { EventType } from "@prisma/client"
-import { revalidatePath, revalidateTag } from "next/cache"
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache"
 
-export async function getEvents() {
-    // For now, fetch all events. In a real app, we might filter by date range.
-    try {
-        const events = await prisma.event.findMany({
-            orderBy: { startTime: 'asc' }
-        })
-        return { success: true, data: events }
-    } catch (error) {
-        console.error("Failed to fetch events", error)
-        return { success: false, error: "Failed to fetch events" }
-    }
-}
+export const getEvents = unstable_cache(
+    async () => {
+        try {
+            const events = await prisma.event.findMany({
+                orderBy: { startTime: 'asc' }
+            })
+            return { success: true, data: events }
+        } catch (error) {
+            console.error("Failed to fetch events", error)
+            return { success: false, error: "Failed to fetch events" }
+        }
+    },
+    ["events-list"],
+    { revalidate: 3600, tags: ["events"] }
+)
 
 const DEFAULT_EVENT_INFOS = [
     {
@@ -78,28 +81,32 @@ const DEFAULT_EVENT_INFOS = [
     }
 ]
 
-export async function getEventTypeInfos() {
-    try {
-        let infos = await prisma.eventTypeInfo.findMany({
-            orderBy: { title: 'asc' }
-        })
-
-        if (infos.length === 0) {
-            // Seed defaults
-            await prisma.eventTypeInfo.createMany({
-                data: DEFAULT_EVENT_INFOS
-            })
-            infos = await prisma.eventTypeInfo.findMany({
+export const getEventTypeInfos = unstable_cache(
+    async () => {
+        try {
+            let infos = await prisma.eventTypeInfo.findMany({
                 orderBy: { title: 'asc' }
             })
-        }
 
-        return { success: true, data: infos }
-    } catch (error) {
-        console.error("Failed to fetch event type infos", error)
-        return { success: false, error: "Failed to fetch event type infos" }
-    }
-}
+            if (infos.length === 0) {
+                // Seed defaults
+                await prisma.eventTypeInfo.createMany({
+                    data: DEFAULT_EVENT_INFOS
+                })
+                infos = await prisma.eventTypeInfo.findMany({
+                    orderBy: { title: 'asc' }
+                })
+            }
+
+            return { success: true, data: infos }
+        } catch (error) {
+            console.error("Failed to fetch event type infos", error)
+            return { success: false, error: "Failed to fetch event type infos" }
+        }
+    },
+    ["event-type-infos"],
+    { revalidate: 86400, tags: ["event-templates"] }
+)
 
 export async function updateEventTypeInfo(data: any) {
     const session = await auth()

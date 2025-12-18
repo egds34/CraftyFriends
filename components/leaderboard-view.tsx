@@ -1,23 +1,21 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Trophy, Medal, User as UserIcon } from "lucide-react"
+import { Trophy, Medal, User as UserIcon, Star } from "lucide-react"
 
-// Mock Data
-const LEADERBOARD_DATA = [
-    { rank: 1, username: "TechnoKing", score: 12500, playtime: "450h", role: "Elite" },
-    { rank: 2, username: "CraftyMiner", score: 11200, playtime: "380h", role: "Premium" },
-    { rank: 3, username: "RedstonePro", score: 9800, playtime: "310h", role: "Premium" },
-    { rank: 4, username: "BedWarsChamp", score: 8500, playtime: "250h", role: "Basic" },
-    { rank: 5, username: "BuilderBob", score: 7200, playtime: "190h", role: "Basic" },
-    { rank: 6, username: "Survivalist", score: 6500, playtime: "150h", role: "Basic" },
-    { rank: 7, username: "PvPVeteran", score: 5900, playtime: "120h", role: "Elite" },
-    { rank: 8, username: "SpeedRunner", score: 5200, playtime: "90h", role: "Premium" },
-    { rank: 9, username: "Explorer99", score: 4800, playtime: "80h", role: "Basic" },
-    { rank: 10, username: "NoobMaster", score: 4500, playtime: "70h", role: "Basic" },
-]
+interface Player {
+    rank: number
+    username: string
+    achievements: number
+    totalAchievements: number
+    role: string
+}
 
-export function LeaderboardView() {
+interface LeaderboardViewProps {
+    players: Player[]
+}
+
+export function LeaderboardView({ players }: LeaderboardViewProps) {
     return (
         <>
             <div className="pt-24 pb-12 px-4 text-center relative">
@@ -41,7 +39,7 @@ export function LeaderboardView() {
                         Server Leaderboard
                     </h1>
                     <p className="text-muted-foreground text-lg max-w-[600px] mx-auto">
-                        The top performing players on Crafty Friends. Compete, climb the ranks, and earn your place in history!
+                        The top achievers on Crafty Friends. Who will be the ultimate champion?
                     </p>
                 </motion.div>
             </div>
@@ -53,22 +51,21 @@ export function LeaderboardView() {
                 className="container mx-auto px-4 py-8 max-w-4xl bg-card border rounded-xl shadow-lg overflow-hidden"
             >
                 {/* Header */}
-                <div className="grid grid-cols-5 bg-muted/50 p-4 font-semibold text-muted-foreground text-sm uppercase tracking-wider">
+                <div className="grid grid-cols-6 bg-muted/50 p-4 font-semibold text-muted-foreground text-sm uppercase tracking-wider">
                     <div className="col-span-1 text-center">Rank</div>
-                    <div className="col-span-2">Player</div>
-                    <div className="col-span-1 text-right">Score</div>
-                    <div className="col-span-1 text-right">Playtime</div>
+                    <div className="col-span-3">Player</div>
+                    <div className="col-span-2 text-right">Achievements</div>
                 </div>
 
                 {/* Rows */}
                 <div className="divide-y">
-                    {LEADERBOARD_DATA.map((player, index) => (
+                    {players.map((player, index) => (
                         <motion.div
-                            key={player.rank}
+                            key={player.username}
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.05 + 0.3 }}
-                            className="grid grid-cols-5 p-4 items-center hover:bg-muted/30 transition-colors"
+                            className="grid grid-cols-6 p-4 items-center hover:bg-muted/30 transition-colors"
                         >
                             <div className="col-span-1 flex justify-center">
                                 {player.rank === 1 && <Medal className="w-6 h-6 text-yellow-500" />}
@@ -76,7 +73,7 @@ export function LeaderboardView() {
                                 {player.rank === 3 && <Medal className="w-6 h-6 text-amber-700" />}
                                 {player.rank > 3 && <span className="text-muted-foreground font-mono w-6 text-center">{player.rank}</span>}
                             </div>
-                            <div className="col-span-2 flex items-center gap-3">
+                            <div className="col-span-3 flex items-center gap-3">
                                 <div className="bg-primary/10 p-2 rounded-full">
                                     <UserIcon className="w-4 h-4 text-primary" />
                                 </div>
@@ -93,14 +90,27 @@ export function LeaderboardView() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="col-span-1 text-right font-mono font-bold text-lg">
-                                {player.score.toLocaleString()}
-                            </div>
-                            <div className="col-span-1 text-right text-muted-foreground font-mono">
-                                {player.playtime}
+                            <div className="col-span-2 text-right flex flex-col items-end gap-1">
+                                <div className="flex items-center gap-2">
+                                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                    <span className="font-mono font-bold text-lg">
+                                        {player.achievements} / {player.totalAchievements}
+                                    </span>
+                                </div>
+                                <div className="w-32 h-1 bg-muted rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-primary"
+                                        style={{ width: `${(player.achievements / (player.totalAchievements || 1)) * 100}%` }}
+                                    />
+                                </div>
                             </div>
                         </motion.div>
                     ))}
+                    {players.length === 0 && (
+                        <div className="p-8 text-center text-muted-foreground italic">
+                            No players found on the leaderboard yet.
+                        </div>
+                    )}
                 </div>
             </motion.div>
         </>

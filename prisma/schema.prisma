@@ -32,6 +32,30 @@ model User {
   passwordHistory   PasswordHistory[]
 }
 
+model Advancement {
+  id          String   @id // e.g., "minecraft:story/mine_diamond"
+  name        String
+  description String?
+  icon        String?
+  category    String?
+  
+  userAdvancements UserAdvancement[]
+}
+
+model UserAdvancement {
+  id            String   @id @default(cuid())
+  username      String   // Minecraft username
+  advancementId String
+  done          Boolean  @default(false)
+  updatedAt     DateTime @updatedAt
+
+  advancement   Advancement @relation(fields: [advancementId], references: [id], onDelete: Cascade)
+
+  @@unique([username, advancementId])
+  @@index([username])
+  @@index([advancementId])
+}
+
 model PasswordHistory {
   id        String   @id @default(cuid())
   userId    String
@@ -199,4 +223,28 @@ model EventTypeInfo {
   rules         String[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+model Statistic {
+  id          String   @id // e.g., "minecraft:custom:minecraft:walk_one_cm"
+  category    String   // e.g., "minecraft:custom"
+  name        String   // e.g., "minecraft:walk_one_cm"
+  displayName String?
+
+  playerStats PlayerStatistic[]
+
+  @@index([category])
+}
+
+model PlayerStatistic {
+  id        String   @id @default(cuid())
+  username  String   // Minecraft username
+  statId    String
+  value     BigInt
+  updatedAt DateTime @updatedAt
+
+  statistic Statistic @relation(fields: [statId], references: [id], onDelete: Cascade)
+
+  @@unique([username, statId])
+  @@index([username])
+  @@index([statId])
 }

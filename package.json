@@ -7,7 +7,11 @@
     "build": "next build",
     "postinstall": "prisma generate",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "npx tsx scripts/seed-stats.ts"
+  },
+  "prisma": {
+    "seed": "npx tsx scripts/seed-stats.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

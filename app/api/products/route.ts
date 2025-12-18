@@ -1,20 +1,27 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { unstable_cache } from "next/cache"
 
-export const dynamic = 'force-dynamic'
-
-export async function GET() {
-    try {
-        const products = await prisma.product.findMany({
+const getCachedProducts = unstable_cache(
+    async () => {
+        return await prisma.product.findMany({
             where: { active: true },
             orderBy: [
                 { category: 'asc' },
                 { price: 'asc' }
             ]
         })
+    },
+    ["products-list"],
+    { revalidate: 3600, tags: ["products"] }
+)
+
+export async function GET() {
+    try {
+        const products = await getCachedProducts()
 
         // Transform to match the Product type expected by the frontend
-        const transformedProducts = products.map(product => {
+        const transformedProducts = products.map((product: any) => {
             const metadata = product.metadata as any
             return {
                 id: product.id,
