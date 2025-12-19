@@ -92,7 +92,7 @@ export async function getLeaderboardData(): Promise<LeaderboardCategory[]> {
         include: {
             playerStats: {
                 orderBy: { value: 'desc' },
-                take: 5
+                take: 50
             }
         },
         take: 5000 // Ensure we fetch enough to find our whitelist matches
@@ -134,4 +134,32 @@ export async function getLeaderboardData(): Promise<LeaderboardCategory[]> {
     })
 
     return leaderboardData
+}
+
+export async function getMockLeaderboardData(): Promise<LeaderboardCategory[]> {
+    const categories = Object.entries(STAT_DEFINITIONS).map(([id, def]) => {
+        const topPlayers: TopPlayer[] = Array.from({ length: 100 }, (_, i) => ({
+            username: `Player_${i + 1}`,
+            value: Math.floor(Math.random() * 10000)
+        }))
+
+        // Sort mock players by value descending
+        topPlayers.sort((a, b) => b.value - a.value)
+
+        return {
+            statId: id,
+            statisticName: id,
+            displayName: def.label,
+            section: def.section,
+            unit: def.unit,
+            topPlayers
+        }
+    })
+
+    const sectionOrder: Record<string, number> = { "Distance": 1, "Combat": 2, "General": 3, "Items": 4 }
+    return categories.sort((a, b) => {
+        const secDiff = (sectionOrder[a.section] || 99) - (sectionOrder[b.section] || 99)
+        if (secDiff !== 0) return secDiff
+        return a.displayName.localeCompare(b.displayName)
+    })
 }

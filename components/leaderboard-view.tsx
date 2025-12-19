@@ -69,11 +69,22 @@ export function LeaderboardView() {
 }
 
 function CyclingSection({ title, stats }: { title: string, stats: LeaderboardCategory[] }) {
-    // Determine how many cards to show per page. Mobile: 1, Tablet: 2, Desktop: 3
-    const CARDS_PER_PAGE = 3
+    const [cardsPerPage, setCardsPerPage] = useState(3)
     const [pageIndex, setPageIndex] = useState(0)
     const [paused, setPaused] = useState(false)
-    const totalPages = Math.ceil(stats.length / CARDS_PER_PAGE)
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 768) setCardsPerPage(1)
+            else if (window.innerWidth < 1280) setCardsPerPage(2)
+            else setCardsPerPage(3)
+        }
+        handleResize()
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
+
+    const totalPages = Math.ceil(stats.length / cardsPerPage)
 
     const handleInteractionChange = useCallback((isOpen: boolean) => {
         setPaused((prev) => {
@@ -99,8 +110,8 @@ function CyclingSection({ title, stats }: { title: string, stats: LeaderboardCat
     }, [totalPages, paused])
 
     const currentStats = stats.slice(
-        pageIndex * CARDS_PER_PAGE,
-        (pageIndex + 1) * CARDS_PER_PAGE
+        pageIndex * cardsPerPage,
+        (pageIndex + 1) * cardsPerPage
     )
 
     return (
@@ -119,8 +130,11 @@ function CyclingSection({ title, stats }: { title: string, stats: LeaderboardCat
                 )}
             </h2>
 
-            <div className="flex justify-start gap-8 min-h-[14rem]">
-                <AnimatePresence mode="wait" initial={false}>
+            <div className={`grid gap-8 min-h-[14rem] ${cardsPerPage === 1 ? 'grid-cols-1' :
+                cardsPerPage === 2 ? 'grid-cols-2' :
+                    'grid-cols-3'
+                }`}>
+                <AnimatePresence mode="wait" initial={true}>
                     {currentStats.map((category, index) => {
                         const uniqueKey = `${category.statId}-${pageIndex}`
 
@@ -232,7 +246,7 @@ function LeaderboardCard({
     const remainingPlayers = category.topPlayers.slice(3)
     const filteredPlayers = remainingPlayers.filter(p =>
         p.username.toLowerCase().includes(searchQuery.toLowerCase())
-    ).slice(0, 10)
+    ).slice(0, 20)
 
     const wobbleKeyframes = {
         scaleX: [1, 1.08, 0.95, 1.02, 0.99, 1],
@@ -243,12 +257,25 @@ function LeaderboardCard({
     const [showModel, setShowModel] = useState(false)
     const [isSkinLoaded, setIsSkinLoaded] = useState(false)
     const [modelWobble, setModelWobble] = useState(false)
+    const [isWobbling, setIsWobbling] = useState(false)
 
     // Delay model rendering to allow entrance animation to play smoothly first
     useEffect(() => {
         const timer = setTimeout(() => setShowModel(true), 1200)
         return () => clearTimeout(timer)
     }, [])
+
+    // Trigger wobble when drawer closes
+    const prevIsOpen = useRef(isDrawerOpen)
+    useEffect(() => {
+        if (prevIsOpen.current && !isDrawerOpen) {
+            setIsWobbling(true)
+            const timer = setTimeout(() => setIsWobbling(false), 800)
+            return () => clearTimeout(timer)
+        }
+        prevIsOpen.current = isDrawerOpen
+    }, [isDrawerOpen])
+
 
     return (
         <motion.div
@@ -257,19 +284,19 @@ function LeaderboardCard({
             variants={{
                 hidden: { scaleX: 0.5, scaleY: 0.5, opacity: 0 },
                 visible: {
-                    scaleX: [0.5, 1.05, 0.95, 1.02, 0.99, 1],
-                    scaleY: [0.5, 0.95, 1.05, 0.98, 1.01, 1],
+                    scaleX: 1,
+                    scaleY: 1,
                     opacity: 1,
                     transition: {
-                        scaleX: { duration: 1, ease: "easeOut", times: [0, 0.3, 0.5, 0.7, 0.85, 1] },
-                        scaleY: { duration: 1, ease: "easeOut", times: [0, 0.3, 0.5, 0.7, 0.85, 1] },
+                        scaleX: { duration: 0.3, ease: "easeOut" },
+                        scaleY: { duration: 0.3, ease: "easeOut" },
                         opacity: { duration: 0.2, ease: "easeOut" }
                     }
                 }
             }}
             // Removed motion.div wrapper since we are handling animations at parent level now
             // But if we need inner animations, we keep them simple
-            className="flex h-48 w-[32rem] relative group flex-shrink-0"
+            className="flex h-48 w-full relative group flex-shrink-0"
             style={{ zIndex, willChange: "transform, opacity" }}
         >
             <div
@@ -321,32 +348,50 @@ function LeaderboardCard({
             <div
                 ref={drawerRef}
                 className="flex-1 ml-20 flex flex-col min-w-0 relative pb-6 z-10 group/card"
-                onMouseEnter={() => setIsHovered(true)}
+                onMouseEnter={() => {
+                    setIsHovered(true)
+                    if (!isDrawerOpen && !isWobbling) {
+                        setIsWobbling(true)
+                        setTimeout(() => setIsWobbling(false), 800)
+                    }
+                }}
                 onMouseLeave={() => setIsHovered(false)}
             >
                 <motion.div
                     onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                    // layout // Removed layout locally to reduce conflict probability
+                    layout
                     onAnimationComplete={() => !isDrawerOpen && setZIndex(1)}
                     initial={false}
                     animate={{
                         height: isDrawerOpen ? "auto" : "calc(100% - 3.75rem)",
-                        // Apply wobble keyframes on HOVER only
                         scale: (isHovered && !isDrawerOpen) ? 1.03 : 1,
-                        ...((isHovered && !isDrawerOpen) ? wobbleKeyframes : { scaleX: 1, scaleY: 1, x: 0 })
+                        // Use isWobbling state to ensure animation completes even if hover is lost
+                        ...(isWobbling && !isDrawerOpen ? wobbleKeyframes : {})
+                    }}
+                    variants={{
+                        hidden: { scaleX: 0.5, scaleY: 0.5, x: 0 },
+                        visible: {
+                            scaleX: [0.5, 1.08, 0.95, 1.02, 0.99, 1],
+                            scaleY: [0.5, 0.92, 1.05, 0.98, 1.01, 1],
+                            x: [0, -2, 2, -1, 1, 0],
+                            transition: {
+                                scaleX: { duration: 1, ease: "easeOut", times: [0, 0.3, 0.5, 0.7, 0.85, 1] },
+                                scaleY: { duration: 1, ease: "easeOut", times: [0, 0.3, 0.5, 0.7, 0.85, 1] },
+                                x: { duration: 0.8, ease: "easeInOut", delay: 0.1 }
+                            }
+                        }
                     }}
                     transition={{
                         // Default spring for height/open animation
                         default: { type: "spring", stiffness: 400, damping: 30 },
-
-                        // Use a purely time-based tween for the wobble keyframes to ensure consistent playback
+                        // Hover wobble transitions (tweened for smoothness)
                         scaleX: { duration: 0.8, ease: "easeInOut" },
                         scaleY: { duration: 0.8, ease: "easeInOut" },
                         x: { duration: 0.8, ease: "easeInOut" }
                     }}
                     className={`absolute top-12 left-1 right-1 backdrop-blur-md rounded-[40px] z-[-1] flex flex-col overflow-hidden cursor-pointer transition-colors ${color.bg} ${color.hover}`}
                 >
-                    <div className="flex-1 min-h-[calc(11rem)] w-full" />
+                    <div className="h-[8.25rem] flex-shrink-0 w-full" />
 
                     <AnimatePresence>
                         {isDrawerOpen && (
@@ -355,8 +400,9 @@ function LeaderboardCard({
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 className="px-3 pb-8 pt-0 flex flex-col gap-2"
+                                onClick={(e) => e.stopPropagation()}
                             >
-                                <div className="relative" onClick={(e) => e.stopPropagation()}>
+                                <motion.div layout className="relative" onClick={(e) => e.stopPropagation()}>
                                     <input
                                         type="text"
                                         placeholder="Search..."
@@ -366,14 +412,20 @@ function LeaderboardCard({
                                         autoFocus
                                     />
                                     <Search className="absolute left-2.5 top-1.5 w-3.5 h-3.5 text-muted-foreground" />
-                                </div>
+                                </motion.div>
 
-                                <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-none" onClick={(e) => e.stopPropagation()}>
+                                <motion.div layout className="max-h-64 overflow-y-auto space-y-1 scrollbar-none" onClick={(e) => e.stopPropagation()}>
                                     {filteredPlayers.length > 0 ? (
                                         filteredPlayers.map((player, idx) => {
                                             const rank = 4 + idx;
                                             return (
-                                                <div key={player.username} className="flex justify-between items-center text-xs px-3 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                                                <motion.div
+                                                    layout
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    key={player.username}
+                                                    className="flex justify-between items-center text-xs px-3 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                                >
                                                     <div className="flex items-center gap-2 overflow-hidden">
                                                         <span className="w-5 text-muted-foreground opacity-70">
                                                             #{rank}
@@ -381,7 +433,7 @@ function LeaderboardCard({
                                                         <span className="truncate font-medium">{player.username}</span>
                                                     </div>
                                                     <span className="font-mono text-muted-foreground">{player.value.toLocaleString()} {category.unit}</span>
-                                                </div>
+                                                </motion.div>
                                             )
                                         })
                                     ) : (
@@ -389,7 +441,7 @@ function LeaderboardCard({
                                             No players found
                                         </div>
                                     )}
-                                </div>
+                                </motion.div>
                             </motion.div>
                         )}
                     </AnimatePresence>
