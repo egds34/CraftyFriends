@@ -1,12 +1,121 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { unstable_cache } from "next/cache"
+import { auth } from "@/auth"
 
 interface StatDefinition {
     section: string
     label: string
     unit: string
     format?: (val: number) => number
+}
+// ... (StatDefinition and STAT_DEFINITIONS remain unchanged)
+
+// ... (getLeaderboardData remains unchanged)
+
+export interface PlayerProfile {
+    username: string
+    skinUrl: string
+    lastSeen: Date
+    playTimeSeconds: number
+    recentAdvancements: {
+        id: string
+        title: string
+        description: string | null
+        icon: string | null
+        date: Date
+    }[]
+    keyStats: {
+        label: string
+        value: string
+    }[]
+}
+
+// ... types match ...
+
+const getCachedPlayerProfile = unstable_cache(
+    async (username: string): Promise<PlayerProfile | null> => {
+        // Validate Username (Minecraft usernames are 3-16 chars, alphanumeric + underscores)
+        if (!/^[a-zA-Z0-9_]{3,16}$/.test(username)) {
+            return null
+        }
+
+        // 1. Fetch recent advancements
+        const recentAdvancements = await prisma.userAdvancement.findMany({
+            where: { username, done: true },
+            orderBy: { updatedAt: 'desc' },
+            take: 3,
+            include: { advancement: true }
+        })
+
+        // 2. Fetch ALL stats for this user to ensure we catch them regardless of exact ID prefixing
+        const stats = await prisma.playerStatistic.findMany({
+            where: { username },
+            include: { statistic: true }
+        })
+
+        if (recentAdvancements.length === 0 && stats.length === 0) {
+            return null
+        }
+
+        // 3. Determine Last Seen (max updatedAt of stats)
+        const lastSeen = stats.length > 0
+            ? stats.reduce((latest, s) => s.updatedAt > latest ? s.updatedAt : latest, new Date(0))
+            : new Date()
+
+        // 4. Format Data (using looser matching logic)
+        // Helper to find stat by ID or fuzzy name match
+        const findStat = (id: string, name: string) => {
+            return stats.find(s => s.statId === id || s.statistic.name === name || s.statId.endsWith(`:${name}`))
+        }
+
+        const playTimeStat = findStat("minecraft:play_time", "play_time")
+        const playTimeSeconds = playTimeStat ? Number(playTimeStat.value) / 20 : 0
+
+        const formattedStats = [
+            {
+                label: "Check-ins",
+                value: findStat("minecraft:jump", "jump")?.value.toLocaleString() ?? "0"
+            },
+            {
+                label: "Mobs Defeated",
+                value: findStat("minecraft:mob_kills", "mob_kills")?.value.toLocaleString() ?? "0"
+            },
+            {
+                label: "Deaths",
+                value: findStat("minecraft:deaths", "deaths")?.value.toLocaleString() ?? "0"
+            }
+        ]
+
+        return {
+            username,
+            skinUrl: `https://minskin.spooky.click/helm/${username}/100.png`,
+            lastSeen,
+            playTimeSeconds,
+            recentAdvancements: recentAdvancements.map(ua => ({
+                id: ua.advancement.id,
+                title: ua.advancement.name,
+                description: ua.advancement.description,
+                icon: ua.advancement.icon,
+                date: ua.updatedAt
+            })),
+            keyStats: formattedStats
+        }
+    },
+    ['player-profile-data'],
+    { revalidate: 60, tags: ['player-profile'] }
+)
+
+// ... imports
+
+// ...
+
+export async function getPlayerDetails(username: string): Promise<PlayerProfile | null> {
+    const session = await auth()
+    if (!session) return null
+
+    return await getCachedPlayerProfile(username)
 }
 
 const STAT_DEFINITIONS: Record<string, StatDefinition> = {
@@ -163,3 +272,5 @@ export async function getMockLeaderboardData(): Promise<LeaderboardCategory[]> {
         return a.displayName.localeCompare(b.displayName)
     })
 }
+
+

@@ -18,6 +18,8 @@ interface SkinViewerProps {
     capeRotation?: number // in radians
     zoom?: number
     mouseTracking?: boolean
+    offsetY?: number // Shift model vertically
+    headOnly?: boolean
     onReady?: () => void
 }
 
@@ -36,6 +38,8 @@ export function SkinViewer({
     capeRotation = 0,
     zoom = 0.8,
     mouseTracking = false,
+    offsetY = 0,
+    headOnly = false,
     onReady
 }: SkinViewerProps) {
     const containerRef = useRef<HTMLDivElement>(null)
@@ -48,6 +52,7 @@ export function SkinViewer({
     const rotationZRef = useRef(rotationZ)
     const headRotationYRef = useRef(headRotationY)
     const capeRotationRef = useRef(capeRotation)
+    const offsetYRef = useRef(offsetY)
 
     // Keep rotation refs in sync
     useEffect(() => {
@@ -56,7 +61,9 @@ export function SkinViewer({
         rotationZRef.current = rotationZ
         headRotationYRef.current = headRotationY
         capeRotationRef.current = capeRotation
-    }, [rotation, rotationX, rotationZ, headRotationY, capeRotation])
+        offsetYRef.current = offsetY
+    }, [rotation, rotationX, rotationZ, headRotationY, capeRotation, offsetY])
+
 
     // 1. Initialize Viewer
     useEffect(() => {
@@ -125,6 +132,7 @@ export function SkinViewer({
             viewer.playerObject.rotation.y = (rotationYRef.current * Math.PI) / 180
             viewer.playerObject.rotation.x = (rotationXRef.current * Math.PI) / 180
             viewer.playerObject.rotation.z = (rotationZRef.current * Math.PI) / 180
+            viewer.playerObject.position.y = offsetYRef.current
 
             // Apply Head Rotation
             viewer.playerObject.skin.head.rotation.y = headRotationYRef.current
@@ -172,12 +180,13 @@ export function SkinViewer({
         viewer.playerObject.rotation.y = (rotation * Math.PI) / 180
         viewer.playerObject.rotation.x = (rotationX * Math.PI) / 180
         viewer.playerObject.rotation.z = (rotationZ * Math.PI) / 180
+        viewer.playerObject.position.y = offsetY
 
         // Apply Head Rotation (only if not mouse tracking)
         if (!mouseTracking) {
             viewer.playerObject.skin.head.rotation.y = headRotationY
         }
-    }, [viewer, autoRotate, rotation, rotationX, rotationZ, headRotationY, mouseTracking])
+    }, [viewer, autoRotate, rotation, rotationX, rotationZ, headRotationY, mouseTracking, offsetY])
 
     // 6. Mouse Tracking
     useEffect(() => {
@@ -209,6 +218,24 @@ export function SkinViewer({
         window.addEventListener('mousemove', handleMouseMove)
         return () => window.removeEventListener('mousemove', handleMouseMove)
     }, [viewer, mouseTracking])
+
+    // 7. Handle Head Only Mode
+    useEffect(() => {
+        if (!viewer) return
+
+        const skin = viewer.playerObject.skin
+        const bodyParts = [
+            skin.body,
+            skin.leftArm,
+            skin.rightArm,
+            skin.leftLeg,
+            skin.rightLeg
+        ]
+
+        bodyParts.forEach(part => {
+            if (part) part.visible = !headOnly
+        })
+    }, [viewer, headOnly])
 
     return (
         <div

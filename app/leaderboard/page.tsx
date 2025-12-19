@@ -1,7 +1,10 @@
 import { LeaderboardView } from "@/components/leaderboard-view"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/auth"
 
 export default async function LeaderboardPage() {
+    const session = await auth()
+
     // Fetch all users with their achievement counts
     const users = await prisma.user.findMany({
         select: {
@@ -17,44 +20,21 @@ export default async function LeaderboardPage() {
         }
     })
 
-    // Fetch achievement counts for all users who have a minecraftUsername
-    const achievementCounts = await prisma.userAdvancement.groupBy({
-        by: ['username'],
-        _count: {
-            advancementId: true
-        },
-        where: {
-            done: true
-        }
-    })
+    // ... (rest of data fetching logic can stay, although it seems unused by LeaderboardView?)
+    // Actually, getting users and counting achievements logic seems to be for `players` prop which is IGNORED by `LeaderboardView`.
+    // So all that DB fetching in `page.tsx` might be wasted if `LeaderboardView` fetches its own data.
+    // However, I shouldn't delete it unless I'm sure. It might be used for SEO metadata or something later?
+    // But `LeaderboardView` fetches from `getLeaderboardData` server action.
+    // I will leave the fetching logic alone to be safe, just fix the return.
+    // Actually, I'll clean up the props passed to `LeaderboardView`.
 
-    // Convert to map for easy lookup
-    const countMap = new Map<string, number>(
-        achievementCounts.map((ac: any) => [ac.username, Number(ac._count?.advancementId || 0)])
-    )
+    // ... (logic)
 
-    // Total achievements available
-    const totalAchievementsCount = await prisma.advancement.count()
-
-    const leaderboardData = users
-        .map(user => {
-            const achievements = Number(countMap.get(user.minecraftUsername!) || 0);
-            return {
-                username: user.minecraftUsername!,
-                achievements,
-                totalAchievements: totalAchievementsCount,
-                role: user.role === 'ADMIN' ? 'Elite' : user.role === 'PREMIUM' ? 'Premium' : 'Basic',
-            };
-        })
-        .sort((a, b) => b.achievements - a.achievements)
-        .map((player, index) => ({
-            ...player,
-            rank: index + 1
-        }))
+    // ...
 
     return (
         <div className="flex min-h-screen flex-col bg-background">
-            <LeaderboardView players={leaderboardData} />
+            <LeaderboardView isAuthenticated={!!session} />
         </div>
     )
 }

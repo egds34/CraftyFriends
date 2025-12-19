@@ -7,10 +7,22 @@ import { SkinViewer } from "@/components/skin-viewer"
 import { ChevronDown, Search } from "lucide-react"
 import { PillowCard } from "@/components/ui/pillow-card"
 import { PillowDrawer } from "@/components/ui/pillow-drawer"
+import { PlayerProfileModal } from "@/components/player-profile-modal"
+import { SignInModal } from "@/components/sign-in-modal"
 
-export function LeaderboardView() {
+export function LeaderboardView({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
     const [categories, setCategories] = useState<LeaderboardCategory[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
+    const [isSignInOpen, setIsSignInOpen] = useState(false)
+
+    const handlePlayerClick = (username: string) => {
+        if (!isAuthenticated) {
+            setIsSignInOpen(true)
+            return
+        }
+        setSelectedPlayer(username)
+    }
 
     useEffect(() => {
         async function fetchData() {
@@ -42,6 +54,7 @@ export function LeaderboardView() {
         Items: categories.filter(c => c.section === "Items"),
     }
 
+
     const sectionOrder = ["Distance", "Combat", "General"]
 
     return (
@@ -57,6 +70,7 @@ export function LeaderboardView() {
                     <AggregateSection
                         title="Server Totals"
                         stats={sections.Items}
+                        onPlayerClick={handlePlayerClick}
                     />
                 )}
 
@@ -69,15 +83,27 @@ export function LeaderboardView() {
                             key={sectionName}
                             title={sectionName}
                             stats={sectionStats}
+                            onPlayerClick={handlePlayerClick}
                         />
                     )
                 })}
             </div>
+
+            <PlayerProfileModal
+                username={selectedPlayer}
+                isOpen={!!selectedPlayer}
+                onClose={() => setSelectedPlayer(null)}
+            />
+
+            <SignInModal
+                isOpen={isSignInOpen}
+                onClose={() => setIsSignInOpen(false)}
+            />
         </div>
     )
 }
 
-function AggregateSection({ title, stats }: { title: string, stats: LeaderboardCategory[] }) {
+function AggregateSection({ title, stats, onPlayerClick }: { title: string, stats: LeaderboardCategory[], onPlayerClick: (username: string) => void }) {
     return (
         <div className="relative">
             <h2 className="text-2xl font-bold mb-8 text-left flex items-center gap-4">
@@ -92,7 +118,7 @@ function AggregateSection({ title, stats }: { title: string, stats: LeaderboardC
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: index * 0.1 }}
                     >
-                        <AggregateCard category={category} />
+                        <AggregateCard category={category} onPlayerClick={onPlayerClick} />
                     </motion.div>
                 ))}
             </div>
@@ -102,10 +128,12 @@ function AggregateSection({ title, stats }: { title: string, stats: LeaderboardC
 
 function AggregateCard({
     category,
-    onInteractionChange
+    onInteractionChange,
+    onPlayerClick
 }: {
     category: LeaderboardCategory,
-    onInteractionChange?: (isOpen: boolean) => void
+    onInteractionChange?: (isOpen: boolean) => void,
+    onPlayerClick: (username: string) => void
 }) {
     const [searchQuery, setSearchQuery] = useState("")
     const [isHovering, setIsHovering] = useState(false)
@@ -204,13 +232,14 @@ function AggregateCard({
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             key={player.username}
-                                            className="flex justify-between items-center text-xs px-3 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                            className="flex justify-between items-center text-xs px-3 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                            onClick={() => onPlayerClick(player.username)}
                                         >
                                             <div className="flex items-center gap-2 overflow-hidden">
                                                 <span className="w-5 text-muted-foreground opacity-70">
                                                     #{rank}
                                                 </span>
-                                                <span className="truncate font-medium">{player.username}</span>
+                                                <span className="truncate font-medium hover:underline">{player.username}</span>
                                             </div>
                                             <span className="font-mono text-muted-foreground">{player.value.toLocaleString()} {category.unit}</span>
                                         </motion.div>
@@ -268,7 +297,7 @@ function AggregateCard({
     )
 }
 
-function CyclingSection({ title, stats }: { title: string, stats: LeaderboardCategory[] }) {
+function CyclingSection({ title, stats, onPlayerClick }: { title: string, stats: LeaderboardCategory[], onPlayerClick: (username: string) => void }) {
     const [cardsPerPage, setCardsPerPage] = useState(3)
     const [pageIndex, setPageIndex] = useState(0)
     const [paused, setPaused] = useState(false)
@@ -288,13 +317,7 @@ function CyclingSection({ title, stats }: { title: string, stats: LeaderboardCat
 
     const handleInteractionChange = useCallback((isOpen: boolean) => {
         setPaused((prev) => {
-            // If we are opening, definitely pause.
             if (isOpen) return true
-            // If we are closing, only unpause if we assume single-drawer mode (which we do mostly)
-            // But to be safe against the race condition of "Simultaneous Close A and Open B":
-            // We just accept the value. 
-            // The issue before was 'Quiet' cards re-broadcasting 'False' on re-render.
-            // With useCallback, that won't happen.
             return isOpen
         })
     }, [])
@@ -304,7 +327,7 @@ function CyclingSection({ title, stats }: { title: string, stats: LeaderboardCat
 
         const interval = setInterval(() => {
             setPageIndex(prev => (prev + 1) % totalPages)
-        }, 8000) // Cycle every 8 seconds
+        }, 8000)
 
         return () => clearInterval(interval)
     }, [totalPages, paused])
@@ -356,6 +379,7 @@ function CyclingSection({ title, stats }: { title: string, stats: LeaderboardCat
                                     // Pass a dummy ref since we aren't using the intersection observer anymore for entrance
                                     root={{ current: null } as any}
                                     onInteractionChange={handleInteractionChange}
+                                    onPlayerClick={onPlayerClick}
                                 />
                             </motion.div>
                         )
@@ -372,14 +396,16 @@ function LeaderboardCard({
     positionIndex,
     isLastItem,
     root,
-    onInteractionChange
+    onInteractionChange,
+    onPlayerClick
 }: {
     category: LeaderboardCategory,
     index: number,
     positionIndex?: number,
     isLastItem?: boolean,
     root: React.RefObject<any>,
-    onInteractionChange?: (isOpen: boolean) => void
+    onInteractionChange?: (isOpen: boolean) => void,
+    onPlayerClick: (username: string) => void
 }) {
     const topPlayer = category.topPlayers[0]
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -574,13 +600,14 @@ function LeaderboardCard({
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             key={player.username}
-                                            className="flex justify-between items-center text-xs px-3 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                            className="flex justify-between items-center text-xs px-3 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                            onClick={() => onPlayerClick(player.username)}
                                         >
                                             <div className="flex items-center gap-2 overflow-hidden">
                                                 <span className="w-5 text-muted-foreground opacity-70">
                                                     #{rank}
                                                 </span>
-                                                <span className="truncate font-medium">{player.username}</span>
+                                                <span className="truncate font-medium hover:underline">{player.username}</span>
                                             </div>
                                             <span className="font-mono text-muted-foreground">{player.value.toLocaleString()} {category.unit}</span>
                                         </motion.div>
@@ -602,12 +629,19 @@ function LeaderboardCard({
 
                     <div className="flex-1 overflow-y-auto pr-1 space-y-2 scrollbar-thin scrollbar-thumb-muted-foreground/20">
                         {category.topPlayers.slice(0, 3).map((player, idx) => (
-                            <div key={player.username} className={`flex justify-between items-center text-sm ${idx === 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                            <div
+                                key={player.username}
+                                className={`flex justify-between items-center text-sm ${idx === 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'} cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 rounded px-1 transition-colors`}
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    onPlayerClick(player.username)
+                                }}
+                            >
                                 <div className="flex items-center gap-2 overflow-hidden">
                                     <span className={`w-4 text-xs ${idx === 0 ? 'text-yellow-500' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-orange-700' : 'opacity-50'}`}>
                                         {idx + 1}
                                     </span>
-                                    <span className="truncate">{player.username}</span>
+                                    <span className="truncate hover:underline">{player.username}</span>
                                 </div>
                                 <span className="font-mono text-xs opacity-80">{player.value.toLocaleString()} {category.unit}</span>
                             </div>
