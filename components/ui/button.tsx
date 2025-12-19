@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: "default" | "outline" | "ghost" | "premium"
+    variant?: "default" | "outline" | "ghost" | "premium" | "destructive"
     size?: "default" | "sm" | "lg" | "icon"
 }
 
@@ -23,6 +23,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                         "border border-input bg-background hover:bg-accent hover:text-accent-foreground": variant === "outline",
                         "hover:bg-accent hover:text-accent-foreground": variant === "ghost",
                         "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-lg hover:opacity-90 hover:shadow-xl": variant === "premium",
+                        "bg-destructive text-destructive-foreground hover:bg-destructive/90": variant === "destructive",
                         "h-10 px-4 py-2": size === "default",
                         "h-9 rounded-md px-3": size === "sm",
                         "h-11 rounded-md px-8": size === "lg",

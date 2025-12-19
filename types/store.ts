@@ -4,12 +4,15 @@ export interface Product {
     id: string
     name: string
     description: string
+    summary?: string // Short description for product card
+    details?: string // Detailed description for modal
     price: number
-    category: 'Memberships' | 'Boosts' | 'Chat' | 'Misc' | 'Donate'
+    category: 'Memberships' | 'Boosts' | 'Chat' | 'Misc' | 'Donate' | 'memberships' | 'boosts' | 'chat' | 'misc' | 'donate' | 'membership' | 'boost'
     type: ProductType
     priceId?: string // Stripe Price ID
     image?: string // Path to image or icon name
     features?: string[]
+    isActive?: boolean // Whether product is available for purchase
 }
 
 export interface CartItem extends Product {

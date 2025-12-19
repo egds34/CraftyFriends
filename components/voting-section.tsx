@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ExternalLink, Vote } from "lucide-react"
 import { motion } from "framer-motion"
+import { PillowCard } from "@/components/ui/pillow-card"
 
 export interface VoteSite {
     name: string
@@ -21,7 +22,7 @@ export function VotingSection({ sites }: VotingSectionProps) {
         <section className="py-20 relative z-10 bg-muted/50">
             <div className="container px-4 mx-auto text-center">
                 <div className="flex flex-col items-center justify-center mb-12">
-                    <h2 className="text-3xl md:text-5xl font-extrabold mb-4 text-primary tracking-tight">Vote for Us!</h2>
+                    <h2 className="text-3xl md:text-5xl font-heading font-extrabold mb-4 text-primary tracking-tight">Vote for Us!</h2>
                     <p className="text-muted-foreground max-w-2xl text-lg">
                         Earn unique items when you vote for us!
                     </p>
@@ -31,20 +32,35 @@ export function VotingSection({ sites }: VotingSectionProps) {
                     {sites.map((site, index) => (
                         <motion.div
                             key={index}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: index * 0.1 }}
+                            initial={{ scale: 0.8, y: 50 }}
+                            whileInView={{ scale: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.3 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 20, delay: index * 0.1 }}
                         >
                             <Link
                                 href={site.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="group block"
+                                className="group block h-full"
                             >
-                                <div className="h-full bg-card/80 backdrop-blur-sm border border-transparent hover:border-primary/30 rounded-2xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-muted/80 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                                        {/* Placeholder for Logo - Just using first letter or generic icon */}
+                                <PillowCard
+                                    noHover
+                                    shadowClassName={`transition-colors duration-300 ${[
+                                        "bg-red-500/40",
+                                        "bg-orange-500/40",
+                                        "bg-amber-500/40",
+                                        "bg-emerald-500/40",
+                                        "bg-cyan-500/40",
+                                        "bg-blue-500/40",
+                                        "bg-violet-500/40",
+                                        "bg-purple-500/40",
+                                        "bg-pink-500/40"
+                                    ][index % 9]}`}
+                                    className="transition-transform duration-300 h-full"
+                                    contentClassName="flex items-center gap-4 p-6"
+                                    shadowTop="top-5"
+                                >
+                                    <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
                                         <span className="text-xl font-bold text-muted-foreground group-hover:text-primary">
                                             {site.name.substring(0, 1).toUpperCase()}
                                         </span>
@@ -57,7 +73,7 @@ export function VotingSection({ sites }: VotingSectionProps) {
                                             Vote Now <ExternalLink className="w-3 h-3" />
                                         </span>
                                     </div>
-                                </div>
+                                </PillowCard>
                             </Link>
                         </motion.div>
                     ))}

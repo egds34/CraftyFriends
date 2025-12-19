@@ -10,7 +10,7 @@ import { NavbarAuthButtons } from "@/components/navbar-auth"
 import { UserNav } from "@/components/user-nav"
 import { User } from "next-auth"
 import { useCart } from "@/components/providers/cart-provider"
-import { ShoppingCart, Trophy, BarChart3, Map as MapIcon } from "lucide-react"
+import { ShoppingCart, Trophy, BarChart3, Map as MapIcon, CalendarDays } from "lucide-react"
 
 function CartBadge() {
     const { items } = useCart()
@@ -67,7 +67,7 @@ export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
             }}
             transition={{ duration: isHome ? 0.3 : 0, ease: "easeInOut" }}
         >
-            <Link href="/" className="text-xl font-bold tracking-tight flex items-center gap-2">
+            <Link href="/" className="text-xl font-heading font-bold tracking-tight flex items-center gap-2">
                 <Image src="/images/logo.png" alt="Logo" width={32} height={32} className="rounded-full" />
                 <span>Crafty <span className="text-primary">Friends</span></span>
             </Link>
@@ -107,14 +107,21 @@ export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
                     <nav className="flex items-center gap-12">
                         <Link
                             href="/store"
-                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2 shadow-sm"
+                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
                         >
                             <Trophy className="w-4 h-4" />
                             Shop
                         </Link>
                         <Link
+                            href="/events"
+                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
+                        >
+                            <CalendarDays className="w-4 h-4" />
+                            Events
+                        </Link>
+                        <Link
                             href="/leaderboard"
-                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2 shadow-sm"
+                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
                         >
                             <BarChart3 className="w-4 h-4" />
                             Leaderboard
@@ -123,7 +130,7 @@ export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
                             <Link
                                 href={blueMapUrl}
                                 target="_blank"
-                                className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2 shadow-sm"
+                                className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
                             >
                                 <MapIcon className="w-4 h-4" />
                                 BlueMap

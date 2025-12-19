@@ -15,7 +15,7 @@ export function GetStartedButton({ user }: GetStartedButtonProps) {
 
     if (user) {
         return (
-            <Link href="/dashboard">
+            <Link href="/account">
                 <Button size="lg" variant="premium">
                     Get Started
                 </Button>

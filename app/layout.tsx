@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Geist_Mono } from "next/font/google";
+import { Geist_Mono, Nunito } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SignOutProvider } from "@/providers/SignOutProvider";
@@ -8,11 +8,16 @@ import { CartProvider } from "@/components/providers/cart-provider";
 
 const superAdorable = localFont({
   src: "./fonts/SuperAdorable.ttf",
-  variable: "--font-super-adorable",
+  variable: "--font-heading",
+});
+
+const nunito = Nunito({
+  subsets: ["latin"],
+  variable: "--font-sans",
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -31,18 +36,22 @@ export const metadata: Metadata = {
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import Navbar from "@/components/navbar";
+import { auth } from "@/auth";
+import { AccountCompletionModal } from "@/components/account-completion-modal";
 
 // ... existing imports
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${superAdorable.variable} ${geistMono.variable} antialiased`}
+        className={`${nunito.variable} ${superAdorable.variable} ${geistMono.variable} antialiased font-sans`}
       >
         <ThemeProvider
           attribute="class"
@@ -54,6 +63,7 @@ export default function RootLayout({
               <Navbar />
               {children}
             </CartProvider>
+            <AccountCompletionModal session={session} />
           </SignOutProvider>
           <ThemeToggle />
         </ThemeProvider>

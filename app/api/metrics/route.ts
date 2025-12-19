@@ -1,5 +1,43 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
+
+const getCachedMetrics = unstable_cache(
+    async (take: number) => {
+        const metrics = await prisma.serverMetric.findMany({
+            take: take,
+            orderBy: {
+                timestamp: 'desc',
+            },
+        });
+
+        // Serialize BigInts to strings while inside the cache boundary
+        // This ensures the data is serializable by Next.js's caching layer
+        return metrics.map(m => ({
+            id: m.id,
+            timestamp: m.timestamp.toISOString(),
+            serverName: m.serverName,
+            tps: m.tps,
+            mspt: m.mspt,
+            onlinePlayerCount: m.onlinePlayerCount,
+            maxPlayers: m.maxPlayers,
+            freeMemory: m.freeMemory.toString(),
+            totalMemory: m.totalMemory.toString(),
+            maxMemory: m.maxMemory.toString(),
+            loadedChunks: m.loadedChunks,
+            entityCount: m.entityCount,
+            cpuUsage: m.cpuUsage,
+            uploadBytes: m.uploadBytes.toString(),
+            downloadBytes: m.downloadBytes.toString(),
+            diskUsage: m.diskUsage.toString(),
+            status: m.status,
+            startTime: m.startTime.toString(),
+            nextRestart: m.nextRestart
+        }));
+    },
+    ["server-metrics-history"],
+    { revalidate: 60, tags: ["metrics"] }
+);
 
 export async function GET(req: Request) {
     try {
@@ -13,34 +51,31 @@ export async function GET(req: Request) {
             take = 60; // 1m view actually starts with last 60 points of history anyway
         }
 
-        // Fetch metrics
-        const metrics = await prisma.serverMetric.findMany({
-            take: take,
-            orderBy: {
-                timestamp: 'desc',
-            },
-        });
+        // Fetch metrics (cached for 1 minute)
+        // Data comes out already serialized from the cache
+        const metrics = await getCachedMetrics(take);
 
         // Reverse to chronological order (oldest to newest) for charting
-        const chronologicalMetrics = metrics.reverse();
+        const chronologicalMetrics = [...metrics].reverse();
 
-        // Serialize BigInts to strings/numbers for JSON
-        const serializedMetrics = chronologicalMetrics.map(m => ({
+        // Add display-specific formatting
+        const formattedMetrics = chronologicalMetrics.map(m => ({
             ...m,
-            status: m.status, // Pass status through
-            freeMemory: m.freeMemory.toString(),
-            totalMemory: m.totalMemory.toString(),
-            maxMemory: m.maxMemory.toString(),
-            uploadBytes: m.uploadBytes.toString(),
-            downloadBytes: m.downloadBytes.toString(),
-            diskUsage: m.diskUsage.toString(),
-            startTime: m.startTime.toString(),
-            nextRestart: m.nextRestart,
             // Format time for easy chart labels
-            formattedTime: new Date(m.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            formattedTime: new Date(m.timestamp).toLocaleTimeString([], {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }),
         }));
 
-        return NextResponse.json(serializedMetrics, { status: 200 });
+        return NextResponse.json(formattedMetrics, {
+            status: 200,
+            headers: {
+                'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30'
+            }
+        });
     } catch (error) {
         console.error("Error fetching metrics:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

@@ -20,12 +20,9 @@ export async function POST() {
             return new NextResponse("User or Customer not found", { status: 404 })
         }
 
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
-            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
-
         const portalSession = await stripe.billingPortal.sessions.create({
             customer: user.stripeCustomerId,
-            return_url: `${baseUrl}/dashboard`,
+            return_url: `${process.env.NEXTAUTH_URL}/account`,
         })
 
         return NextResponse.json({ url: portalSession.url })

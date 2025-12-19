@@ -21,11 +21,26 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
     }
 
+    console.log('========================================')
+    console.log('🔔 STRIPE WEBHOOK RECEIVED!')
+    console.log('Event Type:', event.type)
+    console.log('Event ID:', event.id)
+    console.log('Timestamp:', new Date().toISOString())
+    console.log('========================================')
+
     try {
         switch (event.type) {
             case "product.created":
             case "product.updated": {
                 const product = event.data.object as Stripe.Product
+
+                console.log('=== STRIPE WEBHOOK RECEIVED ===')
+                console.log('Event Type:', event.type)
+                console.log('Product ID:', product.id)
+                console.log('Product Name:', product.name)
+                console.log('Product Description:', product.description)
+                console.log('Product Active:', product.active)
+                console.log('Product Metadata:', JSON.stringify(product.metadata, null, 2))
 
                 // Get the default price for this product
                 let price: Stripe.Price | null = null
@@ -40,6 +55,8 @@ export async function POST(req: NextRequest) {
                     price = await stripe.prices.retrieve(priceId)
                     priceAmount = price.unit_amount ? price.unit_amount / 100 : 0
                     stripePriceId = price.id
+                    console.log('Price Amount:', priceAmount)
+                    console.log('Price ID:', stripePriceId)
                 }
 
                 // Extract metadata
@@ -48,8 +65,19 @@ export async function POST(req: NextRequest) {
                 const features = product.metadata?.features
                     ? JSON.parse(product.metadata.features)
                     : []
+                const summary = product.metadata?.summary || product.description || ""
+                const details = product.metadata?.details || product.description || ""
+                const isActive = product.metadata?.isActive === "false" ? false : true // Default to true
 
-                await prisma.product.upsert({
+                console.log('Extracted Values:')
+                console.log('  - category:', category)
+                console.log('  - type:', type)
+                console.log('  - features:', features)
+                console.log('  - summary:', summary)
+                console.log('  - details:', details)
+                console.log('  - isActive:', isActive)
+
+                const upsertResult = await prisma.product.upsert({
                     where: { stripeProductId: product.id },
                     update: {
                         name: product.name,
@@ -60,7 +88,12 @@ export async function POST(req: NextRequest) {
                         type,
                         features,
                         active: product.active,
-                        metadata: product.metadata as any,
+                        metadata: {
+                            ...product.metadata,
+                            summary,
+                            details,
+                            isActive,
+                        } as any,
                         updatedAt: new Date(),
                     },
                     create: {
@@ -73,11 +106,18 @@ export async function POST(req: NextRequest) {
                         type,
                         features,
                         active: product.active,
-                        metadata: product.metadata as any,
+                        metadata: {
+                            ...product.metadata,
+                            summary,
+                            details,
+                            isActive,
+                        } as any,
                     },
                 })
 
-                console.log(`Product ${event.type}: ${product.name}`)
+                console.log('Database upsert result:', upsertResult)
+                console.log(`Product ${event.type}: ${product.name} - SUCCESS`)
+                console.log('=================================')
                 break
             }
 

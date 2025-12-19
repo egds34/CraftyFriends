@@ -12,16 +12,24 @@ interface CommunityGalleryProps {
 
 export function CommunityGallery({ images }: CommunityGalleryProps) {
     const [activeIndex, setActiveIndex] = useState(0)
+    const [lastInteraction, setLastInteraction] = useState(0)
 
     // Remove early return to allow rendering empty state structure
     // if (!images || images.length === 0) return null
 
     const handleNext = () => {
         setActiveIndex((prev) => (prev + 1) % images.length)
+        setLastInteraction(Date.now()) // Reset timer
     }
 
     const handlePrev = () => {
         setActiveIndex((prev) => (prev - 1 + images.length) % images.length)
+        setLastInteraction(Date.now()) // Reset timer
+    }
+
+    const handleDotClick = (index: number) => {
+        setActiveIndex(index)
+        setLastInteraction(Date.now()) // Reset timer
     }
 
     useEffect(() => {
@@ -30,13 +38,13 @@ export function CommunityGallery({ images }: CommunityGalleryProps) {
             setActiveIndex((prev) => (prev + 1) % images.length)
         }, 3000)
         return () => clearInterval(interval)
-    }, [images])
+    }, [images, lastInteraction]) // Reset interval when lastInteraction changes
 
     return (
         <section className="py-24 bg-muted/40 relative overflow-hidden">
             <div className="container px-4 mx-auto text-center relative z-10">
                 <div className="flex flex-col items-center justify-center mb-16">
-                    <h2 className="text-3xl md:text-5xl font-extrabold mb-4 text-primary tracking-tight">
+                    <h2 className="text-3xl md:text-5xl font-heading font-extrabold mb-4 text-primary tracking-tight">
                         Featured Builds
                     </h2>
                     <p className="text-lg text-muted-foreground font-medium">
@@ -54,7 +62,10 @@ export function CommunityGallery({ images }: CommunityGalleryProps) {
                     ) : (
                         <div className="flex items-center justify-center w-full h-full">
                             {/* Images Container */}
-                            <div className="relative flex-1 h-full flex items-center justify-center overflow-visible">
+                            <div
+                                className="relative flex-1 h-full flex items-center justify-center overflow-visible"
+                                style={{ perspective: '1000px' }}
+                            >
                                 <AnimatePresence initial={false} mode="popLayout">
                                     {images.map((img, i) => {
                                         const length = images.length
@@ -67,6 +78,7 @@ export function CommunityGallery({ images }: CommunityGalleryProps) {
                                         let scale = 0.6;
                                         let opacity = 0;
                                         let blur = "4px";
+                                        let rotateY = 0;
 
                                         if (offset === 0) {
                                             zIndex = 10;
@@ -74,40 +86,49 @@ export function CommunityGallery({ images }: CommunityGalleryProps) {
                                             scale = 1;
                                             opacity = 1;
                                             blur = "0px";
+                                            rotateY = 0;
                                         } else if (offset === -1) {
                                             zIndex = 5;
                                             x = "-50%";
                                             scale = 0.8;
                                             opacity = 0.6;
                                             blur = "2px";
+                                            rotateY = 15;
                                         } else if (offset === 1) {
                                             zIndex = 5;
                                             x = "50%";
                                             scale = 0.8;
                                             opacity = 0.6;
                                             blur = "2px";
+                                            rotateY = -15;
                                         } else {
                                             zIndex = 1;
                                             scale = 0.5;
                                             opacity = 0;
                                             x = offset < 0 ? "-80%" : "80%";
+                                            rotateY = 0;
                                         }
 
                                         return (
                                             <motion.div
                                                 key={i}
-                                                className={`absolute w-[80%] md:w-[65%] h-[90%] rounded-2xl overflow-hidden border-2 border-white/10 shadow-2xl ${offset === 0 ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                                                className={`absolute w-[80%] md:w-[65%] h-[90%] overflow-hidden ${offset === 0 ? 'cursor-grab active:cursor-grabbing' : ''}`}
                                                 initial={false}
                                                 animate={{
                                                     zIndex,
                                                     x,
                                                     scale,
                                                     opacity,
-                                                    filter: `blur(${blur}) grayscale(${offset === 0 ? 0 : 0.5}) brightness(${offset === 0 ? 1 : 0.7})`
+                                                    rotateY,
+                                                    filter: `blur(${blur}) grayscale(${offset === 0 ? 0 : 0.5}) brightness(${offset === 0 ? 1 : 0.7})`,
+                                                    borderRadius: '50px'
                                                 }}
                                                 drag={offset === 0 ? "x" : false}
                                                 dragConstraints={{ left: 0, right: 0 }}
                                                 dragElastic={1}
+                                                onDragStart={() => {
+                                                    setLastInteraction(Date.now()) // Reset timer on drag start
+                                                }}
                                                 onDragEnd={(e, { offset: swipeOffset, velocity }) => {
                                                     const swipeThreshold = 10000;
                                                     const distThreshold = 50;
@@ -115,6 +136,9 @@ export function CommunityGallery({ images }: CommunityGalleryProps) {
                                                         handlePrev();
                                                     } else if (swipeOffset.x < -distThreshold || velocity.x < -swipeThreshold) {
                                                         handleNext();
+                                                    } else {
+                                                        // Reset timer even if no swipe occurred
+                                                        setLastInteraction(Date.now())
                                                     }
                                                 }}
                                                 transition={{
@@ -150,7 +174,7 @@ export function CommunityGallery({ images }: CommunityGalleryProps) {
                         {images.map((_, i) => (
                             <button
                                 key={i}
-                                onClick={() => setActiveIndex(i)}
+                                onClick={() => handleDotClick(i)}
                                 className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${itemsActiveIndex(i)
                                     ? "bg-primary w-8"
                                     : "bg-primary/20 hover:bg-primary/40"

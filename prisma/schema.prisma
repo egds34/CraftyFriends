@@ -22,10 +22,76 @@ model User {
   minecraftUsername String?
   stripeCustomerId  String?   @unique
   role              Role      @default(BASIC)
+  twoFactorSecret   String?   // For Authenticator App
+  isTwoFactorEnabled Boolean @default(false)
+  twoFactorConfirmation TwoFactorConfirmation?
   
   subscriptions     Subscription[]
   accounts          Account[]
   sessions          Session[]
+  passwordHistory   PasswordHistory[]
+}
+
+model Advancement {
+  id          String   @id // e.g., "minecraft:story/mine_diamond"
+  name        String
+  description String?
+  icon        String?
+  category    String?
+  
+  userAdvancements UserAdvancement[]
+}
+
+model UserAdvancement {
+  id            String   @id @default(cuid())
+  username      String   // Minecraft username
+  advancementId String
+  done          Boolean  @default(false)
+  updatedAt     DateTime @updatedAt
+
+  advancement   Advancement @relation(fields: [advancementId], references: [id], onDelete: Cascade)
+
+  @@unique([username, advancementId])
+  @@index([username])
+  @@index([advancementId])
+}
+
+model PasswordHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  hash      String
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, createdAt])
+}
+
+model PasswordResetToken {
+  id String @id @default(cuid())
+  email String
+  token String @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model TwoFactorToken {
+  id String @id @default(cuid())
+  email String
+  token String @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model TwoFactorConfirmation {
+  id String @id @default(cuid())
+
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
 }
 
 model Account {
@@ -122,4 +188,63 @@ model Product {
 
   @@index([category])
   @@index([active])
+}
+
+enum EventType {
+  GAME
+  SOCIAL
+  MAINTENANCE
+  COMPETITION
+  SPECIAL
+}
+
+model Event {
+  id              String    @id @default(cuid())
+  title           String
+  description     String?
+  startTime       DateTime
+  durationMinutes Int
+  type            EventType
+  seriesId        String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([startTime])
+}
+
+model EventTypeInfo {
+  id            String   @id @default(cuid())
+  title         String   @unique
+  description   String
+  image         String
+  shadowColor   String
+  hoverColor    String
+  howTo         String[]
+  rules         String[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+model Statistic {
+  id          String   @id // e.g., "minecraft:custom:minecraft:walk_one_cm"
+  category    String   // e.g., "minecraft:custom"
+  name        String   // e.g., "minecraft:walk_one_cm"
+  displayName String?
+
+  playerStats PlayerStatistic[]
+
+  @@index([category])
+}
+
+model PlayerStatistic {
+  id        String   @id @default(cuid())
+  username  String   // Minecraft username
+  statId    String
+  value     BigInt
+  updatedAt DateTime @updatedAt
+
+  statistic Statistic @relation(fields: [statId], references: [id], onDelete: Cascade)
+
+  @@unique([username, statId])
+  @@index([username])
+  @@index([statId])
 }
