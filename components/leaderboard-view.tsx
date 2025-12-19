@@ -42,7 +42,7 @@ export function LeaderboardView() {
         Items: categories.filter(c => c.section === "Items"),
     }
 
-    const sectionOrder = ["Distance", "Combat", "General", "Items"]
+    const sectionOrder = ["Distance", "Combat", "General"]
 
     return (
         <div className="space-y-24 pb-20 overflow-x-hidden container mx-auto px-8">
@@ -52,6 +52,14 @@ export function LeaderboardView() {
             </div>
 
             <div className="space-y-32">
+                {/* Aggregate Section (Items) */}
+                {sections.Items.length > 0 && (
+                    <AggregateSection
+                        title="Server Totals"
+                        stats={sections.Items}
+                    />
+                )}
+
                 {sectionOrder.map((sectionName, idx) => {
                     const sectionStats = sections[sectionName as keyof typeof sections]
                     if (sectionStats.length === 0) return null
@@ -66,6 +74,197 @@ export function LeaderboardView() {
                 })}
             </div>
         </div>
+    )
+}
+
+function AggregateSection({ title, stats }: { title: string, stats: LeaderboardCategory[] }) {
+    return (
+        <div className="relative">
+            <h2 className="text-2xl font-bold mb-8 text-left flex items-center gap-4">
+                {title}
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {stats.map((category, index) => (
+                    <motion.div
+                        key={category.statId}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: index * 0.1 }}
+                    >
+                        <AggregateCard category={category} />
+                    </motion.div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+function AggregateCard({
+    category,
+    onInteractionChange
+}: {
+    category: LeaderboardCategory,
+    onInteractionChange?: (isOpen: boolean) => void
+}) {
+    const [searchQuery, setSearchQuery] = useState("")
+    const [isHovering, setIsHovering] = useState(false)
+    const [isOpen, setIsOpen] = useState(false)
+
+    // Random float parameters for organic feel
+    const [floatConfig] = useState(() => ({
+        duration: 3 + Math.random() * 2, // 3-5s duration
+        delay: Math.random() * 2, // 0-2s delay
+    }))
+
+    const handleOpenChange = (open: boolean) => {
+        setIsOpen(open)
+        onInteractionChange?.(open)
+    }
+
+    // Map stats to image paths (Using Event placeholders for now)
+    const statImages: Record<string, string> = {
+        "minecraft:mined:total": "/images/events/spleef.png",
+        "minecraft:broken:total": "/images/events/parkour.png",
+        "minecraft:crafted:total": "/images/events/build-battle.png",
+        "minecraft:picked_up:total": "/images/events/spleef.png",
+        "minecraft:dropped:total": "/images/events/parkour.png",
+        "minecraft:used:total": "/images/events/build-battle.png",
+    }
+
+    const bgImage = statImages[category.statId]
+
+    // Fixed color for all aggregate cards
+    const color = {
+        bg: "bg-indigo-500/20",
+        hover: "hover:bg-indigo-500/30",
+        text: "text-indigo-300",
+        ring: "focus:ring-indigo-500/50"
+    }
+
+    // Calculate Server Total
+    const serverTotal = category.topPlayers.reduce((acc, p) => acc + p.value, 0)
+
+    const filteredPlayers = category.topPlayers.filter(p =>
+        p.username.toLowerCase().includes(searchQuery.toLowerCase())
+    ).slice(0, 20)
+
+    return (
+        <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={
+                isOpen || isHovering
+                    ? { y: 0, scale: 1, opacity: 1 }
+                    : {
+                        y: [0, -8, 0],
+                        scale: 1,
+                        opacity: 1,
+                        transition: {
+                            y: {
+                                duration: floatConfig.duration,
+                                repeat: Infinity,
+                                ease: "easeInOut",
+                                delay: floatConfig.delay
+                            }
+                        }
+                    }
+            }
+            className="flex aspect-square w-full relative group flex-shrink-0"
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+        >
+            {/* Ambient Glow behind the card */}
+            <div className="absolute inset-8 bg-indigo-500/30 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+
+            <PillowDrawer
+                className="flex-1"
+                colors={color}
+                onOpenChange={handleOpenChange}
+                drawerContent={
+                    <>
+                        <motion.div layout className="relative" onClick={(e) => e.stopPropagation()}>
+                            <input
+                                type="text"
+                                placeholder="Search..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className={`w-full pl-8 pr-3 py-1.5 text-xs bg-background/40 border-none rounded-2xl focus:outline-none focus:ring-2 placeholder:text-muted-foreground/70 ${color.ring}`}
+                                autoFocus
+                            />
+                            <Search className="absolute left-2.5 top-1.5 w-3.5 h-3.5 text-muted-foreground" />
+                        </motion.div>
+
+                        <motion.div layout className="max-h-64 overflow-y-auto space-y-1 scrollbar-none" onClick={(e) => e.stopPropagation()}>
+                            {filteredPlayers.length > 0 ? (
+                                filteredPlayers.map((player, idx) => {
+                                    const rank = 1 + idx; // Absolute rank since this is the full list
+                                    return (
+                                        <motion.div
+                                            layout
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            key={player.username}
+                                            className="flex justify-between items-center text-xs px-3 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                <span className="w-5 text-muted-foreground opacity-70">
+                                                    #{rank}
+                                                </span>
+                                                <span className="truncate font-medium">{player.username}</span>
+                                            </div>
+                                            <span className="font-mono text-muted-foreground">{player.value.toLocaleString()} {category.unit}</span>
+                                        </motion.div>
+                                    )
+                                })
+                            ) : (
+                                <div className="text-center py-4 text-xs text-muted-foreground">
+                                    No players found
+                                </div>
+                            )}
+                        </motion.div>
+                    </>
+                }
+            >
+                <div className="flex-1 relative overflow-hidden h-full rounded-3xl z-0 bg-slate-900 border border-white/5">
+                    {/* Background Image or Fallback Gradient */}
+                    {bgImage ? (
+                        <div className="absolute inset-0 w-full h-full bg-slate-900">
+                            <img
+                                src={bgImage}
+                                alt={category.displayName}
+                                className="w-full h-full object-cover opacity-90 group-hover:scale-110 transition-transform duration-700"
+                            />
+                            {/* Disclaimer - Only visible if we have an image */}
+                            <div className="absolute top-2 right-3 z-30 pointer-events-none">
+                                <span className="text-[9px] text-white/50 font-mono tracking-widest uppercase border border-white/10 px-2 py-0.5 rounded-full backdrop-blur-md shadow-sm">
+                                    Generated with Gemini AI
+                                </span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-500/80 via-purple-600/80 to-indigo-900/80 group-hover:scale-110 transition-transform duration-700" />
+                    )}
+
+                    {/* Hover Sheen Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent z-10 -translate-x-[150%] group-hover/card:translate-x-[150%] transition-transform duration-1000 ease-in-out" />
+
+                    {/* Gradient Overlay for Text Readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 flex flex-col justify-end text-left z-20">
+                        <p className="text-indigo-100/90 text-[10px] font-bold uppercase tracking-wider mb-1 opacity-90 shadow-sm">
+                            Total {category.displayName.replace("Most ", "").replace("Total ", "").replace("Furthest ", "")}
+                        </p>
+                        <div className="flex items-baseline gap-2">
+                            <h3 className="text-3xl font-black bg-gradient-to-b from-white via-indigo-50 to-indigo-200 bg-clip-text text-transparent drop-shadow-sm tracking-tight">
+                                {serverTotal.toLocaleString()}
+                            </h3>
+                            <p className="text-white/60 text-[10px] font-medium uppercase tracking-widest opacity-80">
+                                {category.unit}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </PillowDrawer>
+        </motion.div>
     )
 }
 

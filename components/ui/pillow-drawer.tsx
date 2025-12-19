@@ -38,12 +38,31 @@ export function PillowDrawer({
     const [isHovered, setIsHovered] = useState(false)
     const [zIndex, setZIndex] = useState(1)
     const [isWobbling, setIsWobbling] = useState(false)
+    const [spacerHeight, setSpacerHeight] = useState("8.25rem") // Default based on typical usage
     const drawerRef = useRef<HTMLDivElement>(null)
+    const mainCardRef = useRef<HTMLDivElement>(null)
 
     // Notify parent of interaction state changes
     useEffect(() => {
         onOpenChange?.(isDrawerOpen)
     }, [isDrawerOpen, onOpenChange])
+
+    // Update spacer height dynamically based on main card height
+    useEffect(() => {
+        if (!mainCardRef.current) return
+
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                // Determine spacer height: Card Height - Drawer Top Offset (3rem/48px)
+                // We clamp it to a minimum to avoid negative values
+                const height = Math.max(0, entry.contentRect.height - 48)
+                setSpacerHeight(`${height}px`)
+            }
+        })
+
+        observer.observe(mainCardRef.current)
+        return () => observer.disconnect()
+    }, [])
 
     // Handle clicking outside to close
     useEffect(() => {
@@ -136,7 +155,10 @@ export function PillowDrawer({
                 )}
             >
                 {/* Spacer to push drawer content below the main card */}
-                <div className="h-[8.25rem] flex-shrink-0 w-full" />
+                <div
+                    className="flex-shrink-0 w-full"
+                    style={{ height: spacerHeight }}
+                />
 
                 <AnimatePresence>
                     {isDrawerOpen && (
@@ -144,7 +166,7 @@ export function PillowDrawer({
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="px-3 pb-8 pt-0 flex flex-col gap-2"
+                            className="px-3 pb-8 pt-3 flex flex-col gap-2"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {drawerContent}
@@ -161,15 +183,17 @@ export function PillowDrawer({
                 )}
             </motion.div>
 
-            <PillowCard
-                className="h-full w-full relative z-10 cursor-pointer"
-                contentClassName={cn("p-0", contentClassName)}
-                shadowClassName="hidden"
-                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                animateOnMount={true}
-            >
-                {children}
-            </PillowCard>
+            <div ref={mainCardRef} className="h-full w-full relative z-10">
+                <PillowCard
+                    className="h-full w-full cursor-pointer"
+                    contentClassName={cn("p-0", contentClassName)}
+                    shadowClassName="hidden"
+                    onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                    animateOnMount={true}
+                >
+                    {children}
+                </PillowCard>
+            </div>
         </div>
     )
 }
