@@ -6,6 +6,7 @@ import { getLeaderboardData, LeaderboardCategory } from "@/app/leaderboard/actio
 import { SkinViewer } from "@/components/skin-viewer"
 import { ChevronDown, Search } from "lucide-react"
 import { PillowCard } from "@/components/ui/pillow-card"
+import { PillowDrawer } from "@/components/ui/pillow-drawer"
 
 export function LeaderboardView() {
     const [categories, setCategories] = useState<LeaderboardCategory[]>([])
@@ -294,14 +295,11 @@ function LeaderboardCard({
                     }
                 }
             }}
-            // Removed motion.div wrapper since we are handling animations at parent level now
-            // But if we need inner animations, we keep them simple
             className="flex h-48 w-full relative group flex-shrink-0"
-            style={{ zIndex, willChange: "transform, opacity" }}
+            style={{ zIndex: 1, willChange: "transform, opacity" }}
         >
             <div
                 className="absolute left-0 top-0 bottom-0 w-40 flex items-center justify-center z-0 cursor-pointer"
-                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
             >
                 <div className="absolute w-[150%] h-[150%] flex items-center justify-center -translate-x-2 -translate-y-8">
                     {showModel && (
@@ -318,7 +316,11 @@ function LeaderboardCard({
                                 wobble: {
                                     opacity: 1,
                                     scale: 1,
-                                    ...wobbleKeyframes,
+                                    ...{
+                                        scaleX: [1, 1.08, 0.95, 1.02, 0.99, 1],
+                                        scaleY: [1, 0.92, 1.05, 0.98, 1.01, 1],
+                                        x: [0, -2, 2, -1, 1, 0],
+                                    },
                                     transition: { duration: 0.6, ease: "easeInOut" }
                                 }
                             }}
@@ -345,142 +347,75 @@ function LeaderboardCard({
                 </div>
             </div>
 
-            <div
-                ref={drawerRef}
-                className="flex-1 ml-20 flex flex-col min-w-0 relative pb-6 z-10 group/card"
-                onMouseEnter={() => {
-                    setIsHovered(true)
-                    if (!isDrawerOpen && !isWobbling) {
-                        setIsWobbling(true)
-                        setTimeout(() => setIsWobbling(false), 800)
-                    }
-                }}
-                onMouseLeave={() => setIsHovered(false)}
-            >
-                <motion.div
-                    onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                    layout
-                    onAnimationComplete={() => !isDrawerOpen && setZIndex(1)}
-                    initial={false}
-                    animate={{
-                        height: isDrawerOpen ? "auto" : "calc(100% - 3.75rem)",
-                        scale: (isHovered && !isDrawerOpen) ? 1.03 : 1,
-                        // Use isWobbling state to ensure animation completes even if hover is lost
-                        ...(isWobbling && !isDrawerOpen ? wobbleKeyframes : {})
-                    }}
-                    variants={{
-                        hidden: { scaleX: 0.5, scaleY: 0.5, x: 0 },
-                        visible: {
-                            scaleX: [0.5, 1.08, 0.95, 1.02, 0.99, 1],
-                            scaleY: [0.5, 0.92, 1.05, 0.98, 1.01, 1],
-                            x: [0, -2, 2, -1, 1, 0],
-                            transition: {
-                                scaleX: { duration: 1, ease: "easeOut", times: [0, 0.3, 0.5, 0.7, 0.85, 1] },
-                                scaleY: { duration: 1, ease: "easeOut", times: [0, 0.3, 0.5, 0.7, 0.85, 1] },
-                                x: { duration: 0.8, ease: "easeInOut", delay: 0.1 }
-                            }
-                        }
-                    }}
-                    transition={{
-                        // Default spring for height/open animation
-                        default: { type: "spring", stiffness: 400, damping: 30 },
-                        // Hover wobble transitions (tweened for smoothness)
-                        scaleX: { duration: 0.8, ease: "easeInOut" },
-                        scaleY: { duration: 0.8, ease: "easeInOut" },
-                        x: { duration: 0.8, ease: "easeInOut" }
-                    }}
-                    className={`absolute top-12 left-1 right-1 backdrop-blur-md rounded-[40px] z-[-1] flex flex-col overflow-hidden cursor-pointer transition-colors ${color.bg} ${color.hover}`}
-                >
-                    <div className="h-[8.25rem] flex-shrink-0 w-full" />
+            <PillowDrawer
+                className="flex-1 ml-20"
+                colors={color}
+                onOpenChange={onInteractionChange}
+                drawerContent={
+                    <>
+                        <motion.div layout className="relative" onClick={(e) => e.stopPropagation()}>
+                            <input
+                                type="text"
+                                placeholder="Search..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className={`w-full pl-8 pr-3 py-1.5 text-xs bg-background/40 border-none rounded-2xl focus:outline-none focus:ring-2 placeholder:text-muted-foreground/70 ${color.ring}`}
+                                autoFocus
+                            />
+                            <Search className="absolute left-2.5 top-1.5 w-3.5 h-3.5 text-muted-foreground" />
+                        </motion.div>
 
-                    <AnimatePresence>
-                        {isDrawerOpen && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="px-3 pb-8 pt-0 flex flex-col gap-2"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <motion.div layout className="relative" onClick={(e) => e.stopPropagation()}>
-                                    <input
-                                        type="text"
-                                        placeholder="Search..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className={`w-full pl-8 pr-3 py-1.5 text-xs bg-background/40 border-none rounded-2xl focus:outline-none focus:ring-2 placeholder:text-muted-foreground/70 ${color.ring}`}
-                                        autoFocus
-                                    />
-                                    <Search className="absolute left-2.5 top-1.5 w-3.5 h-3.5 text-muted-foreground" />
-                                </motion.div>
-
-                                <motion.div layout className="max-h-64 overflow-y-auto space-y-1 scrollbar-none" onClick={(e) => e.stopPropagation()}>
-                                    {filteredPlayers.length > 0 ? (
-                                        filteredPlayers.map((player, idx) => {
-                                            const rank = 4 + idx;
-                                            return (
-                                                <motion.div
-                                                    layout
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    key={player.username}
-                                                    className="flex justify-between items-center text-xs px-3 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                                                >
-                                                    <div className="flex items-center gap-2 overflow-hidden">
-                                                        <span className="w-5 text-muted-foreground opacity-70">
-                                                            #{rank}
-                                                        </span>
-                                                        <span className="truncate font-medium">{player.username}</span>
-                                                    </div>
-                                                    <span className="font-mono text-muted-foreground">{player.value.toLocaleString()} {category.unit}</span>
-                                                </motion.div>
-                                            )
-                                        })
-                                    ) : (
-                                        <div className="text-center py-4 text-xs text-muted-foreground">
-                                            No players found
-                                        </div>
-                                    )}
-                                </motion.div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    <div className={`absolute bottom-1 w-full flex justify-center gap-1 ${color.text}`}>
-                        <div className="w-[3px] h-[3px] rounded-full bg-current opacity-80" />
-                        <div className="w-[3px] h-[3px] rounded-full bg-current opacity-80" />
-                        <div className="w-[3px] h-[3px] rounded-full bg-current opacity-80" />
-                    </div>
-                </motion.div>
-
-                <PillowCard
-                    className="h-full w-full relative z-10 cursor-pointer"
-                    contentClassName="p-0"
-                    shadowClassName="hidden"
-                    onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                    animateOnMount={true}
-                >
-                    <div className="px-6 py-4 flex-1 flex flex-col min-h-0 flex-shrink-0 h-full">
-                        <h3 className={`font-bold text-lg capitalize mb-3 truncate text-center ${color.text}`} title={category.displayName}>
-                            {category.displayName}
-                        </h3>
-
-                        <div className="flex-1 overflow-y-auto pr-1 space-y-2 scrollbar-thin scrollbar-thumb-muted-foreground/20">
-                            {category.topPlayers.slice(0, 3).map((player, idx) => (
-                                <div key={player.username} className={`flex justify-between items-center text-sm ${idx === 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                                    <div className="flex items-center gap-2 overflow-hidden">
-                                        <span className={`w-4 text-xs ${idx === 0 ? 'text-yellow-500' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-orange-700' : 'opacity-50'}`}>
-                                            {idx + 1}
-                                        </span>
-                                        <span className="truncate">{player.username}</span>
-                                    </div>
-                                    <span className="font-mono text-xs opacity-80">{player.value.toLocaleString()} {category.unit}</span>
+                        <motion.div layout className="max-h-64 overflow-y-auto space-y-1 scrollbar-none" onClick={(e) => e.stopPropagation()}>
+                            {filteredPlayers.length > 0 ? (
+                                filteredPlayers.map((player, idx) => {
+                                    const rank = 4 + idx;
+                                    return (
+                                        <motion.div
+                                            layout
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            key={player.username}
+                                            className="flex justify-between items-center text-xs px-3 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                <span className="w-5 text-muted-foreground opacity-70">
+                                                    #{rank}
+                                                </span>
+                                                <span className="truncate font-medium">{player.username}</span>
+                                            </div>
+                                            <span className="font-mono text-muted-foreground">{player.value.toLocaleString()} {category.unit}</span>
+                                        </motion.div>
+                                    )
+                                })
+                            ) : (
+                                <div className="text-center py-4 text-xs text-muted-foreground">
+                                    No players found
                                 </div>
-                            ))}
-                        </div>
+                            )}
+                        </motion.div>
+                    </>
+                }
+            >
+                <div className="px-6 py-4 flex-1 flex flex-col min-h-0 flex-shrink-0 h-full">
+                    <h3 className={`font-bold text-lg capitalize mb-3 truncate text-center ${color.text}`} title={category.displayName}>
+                        {category.displayName}
+                    </h3>
+
+                    <div className="flex-1 overflow-y-auto pr-1 space-y-2 scrollbar-thin scrollbar-thumb-muted-foreground/20">
+                        {category.topPlayers.slice(0, 3).map((player, idx) => (
+                            <div key={player.username} className={`flex justify-between items-center text-sm ${idx === 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                    <span className={`w-4 text-xs ${idx === 0 ? 'text-yellow-500' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-orange-700' : 'opacity-50'}`}>
+                                        {idx + 1}
+                                    </span>
+                                    <span className="truncate">{player.username}</span>
+                                </div>
+                                <span className="font-mono text-xs opacity-80">{player.value.toLocaleString()} {category.unit}</span>
+                            </div>
+                        ))}
                     </div>
-                </PillowCard>
-            </div>
+                </div>
+            </PillowDrawer>
         </motion.div>
     )
 }
