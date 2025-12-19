@@ -16,6 +16,8 @@ interface PillowCardProps extends React.HTMLAttributes<HTMLDivElement> {
     shadowLeft?: string;
     /** Tailwind class for right position of shadow (default: right-0) */
     shadowRight?: string;
+    /** If true, triggers the enter animation immediately on mount instead of waiting for viewport */
+    animateOnMount?: boolean;
 }
 
 export function PillowCard({
@@ -28,6 +30,7 @@ export function PillowCard({
     shadowLeft = "left-[2px]",
     shadowRight = "right-[2px]",
     noHover = false,
+    animateOnMount = false,
     ...props
 }: PillowCardProps & { noHover?: boolean }) {
     const [animationState, setAnimationState] = useState<'idle' | 'enter' | 'rest'>('idle');
@@ -44,6 +47,13 @@ export function PillowCard({
         ease: "circOut" as const,
         delay: 0.1
     };
+
+    // Handle force animation on mount
+    React.useEffect(() => {
+        if (animateOnMount && animationState === 'idle') {
+            setAnimationState('enter');
+        }
+    }, [animateOnMount, animationState]);
 
     // Determine the current variant for the shadow
     const shadowVariant = !noHover && isHovered ? 'hover' : animationState;

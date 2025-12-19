@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { getLeaderboardData, LeaderboardCategory } from "@/app/leaderboard/actions"
 import { SkinViewer } from "@/components/skin-viewer"
@@ -33,44 +33,168 @@ export function LeaderboardView() {
         return <div className="text-center py-20 text-muted-foreground">No leaderboard data found yet. Start playing!</div>
     }
 
+    // Group categories by section
+    const sections = {
+        Distance: categories.filter(c => c.section === "Distance"),
+        Combat: categories.filter(c => c.section === "Combat"),
+        General: categories.filter(c => c.section === "General"),
+        Items: categories.filter(c => c.section === "Items"),
+    }
+
+    const sectionOrder = ["Distance", "Combat", "General", "Items"]
+
     return (
-        <div className="space-y-12">
+        <div className="space-y-24 pb-20 overflow-x-hidden container mx-auto px-8">
             <div className="text-center space-y-4">
                 <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">Server Leaders</h1>
                 <p className="text-lg text-muted-foreground">Top players across various categories</p>
             </div>
 
-            <motion.div
-                className="grid gap-8 xl:gap-10 px-4 md:grid-cols-2 xl:grid-cols-3"
-                initial="hidden"
-                animate="show"
-                variants={{
-                    hidden: { opacity: 0 },
-                    show: {
-                        opacity: 1,
-                        transition: { staggerChildren: 0.15 }
-                    }
-                }}
-            >
-                {categories.map((category, index) => (
-                    <LeaderboardCard key={category.statId} category={category} index={index} />
-                ))}
-            </motion.div>
+            <div className="space-y-32">
+                {sectionOrder.map((sectionName, idx) => {
+                    const sectionStats = sections[sectionName as keyof typeof sections]
+                    if (sectionStats.length === 0) return null
+
+                    return (
+                        <CyclingSection
+                            key={sectionName}
+                            title={sectionName}
+                            stats={sectionStats}
+                        />
+                    )
+                })}
+            </div>
         </div>
     )
 }
 
-function LeaderboardCard({ category, index }: { category: LeaderboardCategory, index: number }) {
+function CyclingSection({ title, stats }: { title: string, stats: LeaderboardCategory[] }) {
+    // Determine how many cards to show per page. Mobile: 1, Tablet: 2, Desktop: 3
+    const CARDS_PER_PAGE = 3
+    const [pageIndex, setPageIndex] = useState(0)
+    const [paused, setPaused] = useState(false)
+    const totalPages = Math.ceil(stats.length / CARDS_PER_PAGE)
+
+    const handleInteractionChange = useCallback((isOpen: boolean) => {
+        setPaused((prev) => {
+            // If we are opening, definitely pause.
+            if (isOpen) return true
+            // If we are closing, only unpause if we assume single-drawer mode (which we do mostly)
+            // But to be safe against the race condition of "Simultaneous Close A and Open B":
+            // We just accept the value. 
+            // The issue before was 'Quiet' cards re-broadcasting 'False' on re-render.
+            // With useCallback, that won't happen.
+            return isOpen
+        })
+    }, [])
+
+    useEffect(() => {
+        if (totalPages <= 1 || paused) return
+
+        const interval = setInterval(() => {
+            setPageIndex(prev => (prev + 1) % totalPages)
+        }, 8000) // Cycle every 8 seconds
+
+        return () => clearInterval(interval)
+    }, [totalPages, paused])
+
+    const currentStats = stats.slice(
+        pageIndex * CARDS_PER_PAGE,
+        (pageIndex + 1) * CARDS_PER_PAGE
+    )
+
+    return (
+        <div className="relative">
+            <h2 className="text-2xl font-bold mb-8 text-left flex items-center gap-4">
+                {title}
+                {totalPages > 1 && (
+                    <div className="flex gap-2">
+                        {Array.from({ length: totalPages }).map((_, i) => (
+                            <div
+                                key={i}
+                                className={`h-2 w-2 rounded-full transition-colors duration-300 ${i === pageIndex ? 'bg-primary' : 'bg-primary/20'}`}
+                            />
+                        ))}
+                    </div>
+                )}
+            </h2>
+
+            <div className="flex justify-start gap-8 min-h-[14rem]">
+                <AnimatePresence mode="wait" initial={false}>
+                    {currentStats.map((category, index) => {
+                        const uniqueKey = `${category.statId}-${pageIndex}`
+
+                        return (
+                            <motion.div
+                                key={uniqueKey}
+                                exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                                transition={{
+                                    duration: 0.5,
+                                    ease: "backOut"
+                                }}
+                                className="relative"
+                            >
+                                <LeaderboardCard
+                                    category={category}
+                                    index={stats.indexOf(category)}
+                                    positionIndex={index}
+                                    isLastItem={index === currentStats.length - 1}
+                                    // Pass a dummy ref since we aren't using the intersection observer anymore for entrance
+                                    root={{ current: null } as any}
+                                    onInteractionChange={handleInteractionChange}
+                                />
+                            </motion.div>
+                        )
+                    })}
+                </AnimatePresence>
+            </div>
+        </div>
+    )
+}
+
+function LeaderboardCard({
+    category,
+    index,
+    positionIndex,
+    isLastItem,
+    root,
+    onInteractionChange
+}: {
+    category: LeaderboardCategory,
+    index: number,
+    positionIndex?: number,
+    isLastItem?: boolean,
+    root: React.RefObject<any>,
+    onInteractionChange?: (isOpen: boolean) => void
+}) {
     const topPlayer = category.topPlayers[0]
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+
+
+
     const [isHovered, setIsHovered] = useState(false)
     const [zIndex, setZIndex] = useState(1)
     const [searchQuery, setSearchQuery] = useState("")
     const drawerRef = useRef<HTMLDivElement>(null)
-    // Trigger wobble on load/enter
-    const [forceWobble, setForceWobble] = useState(false)
 
-    // Vibrant pastel colors for the cards
+    // Notify parent of interaction state changes
+    useEffect(() => {
+        onInteractionChange?.(isDrawerOpen)
+    }, [isDrawerOpen, onInteractionChange])
+
+    // Determine facing direction for head
+    // We want: 
+    // - First item (pos 0): Look Right (towards next item) -> Head turns Left? Let's try -0.5
+    // - Last item: Look Left (towards prev item) -> Head turns Right? Let's try 0.5
+    const [headRotation] = useState(() => {
+        const LOOK_RIGHT = -0.6
+        const LOOK_LEFT = 0.6
+
+        if (positionIndex === 0 && !isLastItem) return LOOK_RIGHT
+        if (positionIndex !== 0 && isLastItem) return LOOK_LEFT
+        return Math.random() > 0.5 ? LOOK_RIGHT : LOOK_LEFT
+    })
+
     const colors = [
         { bg: "bg-rose-500/20", hover: "hover:bg-rose-500/30", text: "text-rose-600", ring: "focus:ring-rose-500/50" },
         { bg: "bg-orange-500/20", hover: "hover:bg-orange-500/30", text: "text-orange-600", ring: "focus:ring-orange-500/50" },
@@ -83,28 +207,9 @@ function LeaderboardCard({ category, index }: { category: LeaderboardCategory, i
     ]
     const color = colors[index % colors.length]
 
-    // Click outside to close
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            // Updated logic: if clicking outside the drawer ref AND the button (handled via stopPropagation on button usually, but here ref is on drawer content)
-            // But wait, the drawer assembly includes the button now? No, the ref is on the motion.div (drawer content).
-            // We need a ref for the WHOLE assembly to handle click outside properly.
-            // Let's attach drawerRef to the wrapper instead?
-            // Actually, currently `drawerRef` is on `motion.div` content.
-            // If I click the button, I toggle.
-            // If I click outside, I close.
-            // If the assembly is absolute, clicking outside is easy.
-
             if (drawerRef.current && !drawerRef.current.contains(event.target as Node)) {
-                // Optimization: The button has stopPropagation, so we don't need to worry about it triggering this if it's outside the ref.
-                // But wait, if I click the button (which is OUTSIDE the drawer content ref), this fires.
-                // This sets isDrawerOpen(false).
-                // Then the button onClick fires and sets isDrawerOpen(!false) -> true.
-                // Result: Drawer stays open or re-opens.
-                // Fix: We need the ref to wrap the BUTTON too?
-                // Or we let the button handle it.
-                // Let's just rely on the button's stopPropagation which I added in the new code.
-                // If button stops propagation, this document listener won't receive the click! Perfect.
                 setIsDrawerOpen(false)
             }
         }
@@ -120,12 +225,10 @@ function LeaderboardCard({ category, index }: { category: LeaderboardCategory, i
         if (isDrawerOpen) {
             setZIndex(50)
         } else {
-            // Drop to intermediate z-index while closing so opened drawers (50) cover us
             setZIndex(prev => prev === 50 ? 20 : prev)
         }
     }, [isDrawerOpen])
 
-    // Filter players for the drawer (excluding top 3)
     const remainingPlayers = category.topPlayers.slice(3)
     const filteredPlayers = remainingPlayers.filter(p =>
         p.username.toLowerCase().includes(searchQuery.toLowerCase())
@@ -137,75 +240,114 @@ function LeaderboardCard({ category, index }: { category: LeaderboardCategory, i
         x: [0, -2, 2, -1, 1, 0],
     };
 
+    const [showModel, setShowModel] = useState(false)
+    const [isSkinLoaded, setIsSkinLoaded] = useState(false)
+    const [modelWobble, setModelWobble] = useState(false)
+
+    // Delay model rendering to allow entrance animation to play smoothly first
+    useEffect(() => {
+        const timer = setTimeout(() => setShowModel(true), 1200)
+        return () => clearTimeout(timer)
+    }, [])
+
     return (
         <motion.div
+            initial="hidden"
+            animate="visible"
             variants={{
-                hidden: { opacity: 0, y: 20 },
-                show: { opacity: 1, y: 0 }
+                hidden: { scaleX: 0.5, scaleY: 0.5, opacity: 0 },
+                visible: {
+                    scaleX: [0.5, 1.05, 0.95, 1.02, 0.99, 1],
+                    scaleY: [0.5, 0.95, 1.05, 0.98, 1.01, 1],
+                    opacity: 1,
+                    transition: {
+                        scaleX: { duration: 1, ease: "easeOut", times: [0, 0.3, 0.5, 0.7, 0.85, 1] },
+                        scaleY: { duration: 1, ease: "easeOut", times: [0, 0.3, 0.5, 0.7, 0.85, 1] },
+                        opacity: { duration: 0.2, ease: "easeOut" }
+                    }
+                }
             }}
-            onAnimationComplete={() => {
-                setForceWobble(true)
-                setTimeout(() => setForceWobble(false), 1000)
-            }}
-            className="flex h-48 relative group"
-            style={{ zIndex }}
+            // Removed motion.div wrapper since we are handling animations at parent level now
+            // But if we need inner animations, we keep them simple
+            className="flex h-48 w-[32rem] relative group flex-shrink-0"
+            style={{ zIndex, willChange: "transform, opacity" }}
         >
-            {/* Left: 3D Head Viewer (Rank 1) */}
-            {/* Left: 3D Head Viewer (Rank 1) - Tucked behind */}
             <div
                 className="absolute left-0 top-0 bottom-0 w-40 flex items-center justify-center z-0 cursor-pointer"
                 onClick={() => setIsDrawerOpen(!isDrawerOpen)}
             >
-                <div className="absolute w-[150%] h-[150%] flex items-center justify-center -translate-x-2 -translate-y-14">
-                    <SkinViewer
-                        username={topPlayer.username}
-                        animation="idle"
-                        zoom={1}
-                        rotation={30}
-                        mouseTracking={true}
-                        className="pointer-events-none"
-                    />
+                <div className="absolute w-[150%] h-[150%] flex items-center justify-center -translate-x-2 -translate-y-8">
+                    {showModel && (
+                        <motion.div
+                            initial="hidden"
+                            animate={isSkinLoaded ? (modelWobble ? "wobble" : "visible") : "hidden"}
+                            variants={{
+                                hidden: { opacity: 0, scale: 0.6 },
+                                visible: {
+                                    opacity: 1,
+                                    scale: 1,
+                                    transition: { duration: 0.2, ease: "easeOut" }
+                                },
+                                wobble: {
+                                    opacity: 1,
+                                    scale: 1,
+                                    ...wobbleKeyframes,
+                                    transition: { duration: 0.6, ease: "easeInOut" }
+                                }
+                            }}
+                            onAnimationComplete={(definition) => {
+                                if (definition === "visible") {
+                                    setModelWobble(true)
+                                }
+                            }}
+                            className="w-full h-full"
+                        >
+                            <SkinViewer
+                                username={topPlayer.username}
+                                animation="idle"
+                                zoom={0.9}
+                                rotation={30} // Fixed body rotation
+                                headRotationY={headRotation} // Dynamic head rotation
+                                rotationX={10} // Slight tilt down to look nicer
+                                mouseTracking={false}
+                                onReady={() => setIsSkinLoaded(true)}
+                                className="pointer-events-none"
+                            />
+                        </motion.div>
+                    )}
                 </div>
             </div>
 
-            {/* Right: Top 3 List */}
             <div
                 ref={drawerRef}
                 className="flex-1 ml-20 flex flex-col min-w-0 relative pb-6 z-10 group/card"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
-                {/* Shadow Drawer (Acts as background shadow + drawer) */}
                 <motion.div
                     onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                    layout
+                    // layout // Removed layout locally to reduce conflict probability
                     onAnimationComplete={() => !isDrawerOpen && setZIndex(1)}
                     initial={false}
                     animate={{
                         height: isDrawerOpen ? "auto" : "calc(100% - 3.75rem)",
-                        scale: (isHovered && !isDrawerOpen) || forceWobble ? 1.03 : 1,
-                        ...((isHovered && !isDrawerOpen) || forceWobble ? wobbleKeyframes : { scaleX: 1, scaleY: 1, x: 0 })
+                        // Apply wobble keyframes on HOVER only
+                        scale: (isHovered && !isDrawerOpen) ? 1.03 : 1,
+                        ...((isHovered && !isDrawerOpen) ? wobbleKeyframes : { scaleX: 1, scaleY: 1, x: 0 })
                     }}
                     transition={{
-                        type: "spring",
-                        stiffness: 400,
-                        damping: 30,
-                        scaleX: { duration: 0.8, ease: "circOut" },
-                        scaleY: { duration: 0.9, ease: "circOut" },
+                        // Default spring for height/open animation
+                        default: { type: "spring", stiffness: 400, damping: 30 },
+
+                        // Use a purely time-based tween for the wobble keyframes to ensure consistent playback
+                        scaleX: { duration: 0.8, ease: "easeInOut" },
+                        scaleY: { duration: 0.8, ease: "easeInOut" },
                         x: { duration: 0.8, ease: "easeInOut" }
                     }}
                     className={`absolute top-12 left-1 right-1 backdrop-blur-md rounded-[40px] z-[-1] flex flex-col overflow-hidden cursor-pointer transition-colors ${color.bg} ${color.hover}`}
                 >
-                    {/* Spacer to push content below the main card area */}
-                    {/* Parent is h-48 + pb-6 (1.5rem) = 12rem + 1.5rem. 
-                        Top-12 is 3rem. 
-                        We want spacer to fill the area 'behind' the card so drawer starts below. 
-                        Spacer H = (100% parent - pb-6) - top-12? 
-                        Let's just use a flexible spacer that fills remaining height in closed state.
-                    */}
                     <div className="flex-1 min-h-[calc(11rem)] w-full" />
 
-                    {/* Drawer Content */}
                     <AnimatePresence>
                         {isDrawerOpen && (
                             <motion.div
@@ -238,7 +380,7 @@ function LeaderboardCard({ category, index }: { category: LeaderboardCategory, i
                                                         </span>
                                                         <span className="truncate font-medium">{player.username}</span>
                                                     </div>
-                                                    <span className="font-mono text-muted-foreground">{player.value.toLocaleString()}</span>
+                                                    <span className="font-mono text-muted-foreground">{player.value.toLocaleString()} {category.unit}</span>
                                                 </div>
                                             )
                                         })
@@ -252,8 +394,6 @@ function LeaderboardCard({ category, index }: { category: LeaderboardCategory, i
                         )}
                     </AnimatePresence>
 
-                    {/* Handle Indicator (Subtle) */}
-                    {/* Handle Indicator (Subtle) */}
                     <div className={`absolute bottom-1 w-full flex justify-center gap-1 ${color.text}`}>
                         <div className="w-[3px] h-[3px] rounded-full bg-current opacity-80" />
                         <div className="w-[3px] h-[3px] rounded-full bg-current opacity-80" />
@@ -266,7 +406,7 @@ function LeaderboardCard({ category, index }: { category: LeaderboardCategory, i
                     contentClassName="p-0"
                     shadowClassName="hidden"
                     onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                    {...{ animate: isHovered ? "hover" : "visible" } as any}
+                    animateOnMount={true}
                 >
                     <div className="px-6 py-4 flex-1 flex flex-col min-h-0 flex-shrink-0 h-full">
                         <h3 className={`font-bold text-lg capitalize mb-3 truncate text-center ${color.text}`} title={category.displayName}>
@@ -282,16 +422,13 @@ function LeaderboardCard({ category, index }: { category: LeaderboardCategory, i
                                         </span>
                                         <span className="truncate">{player.username}</span>
                                     </div>
-                                    <span className="font-mono text-xs opacity-80">{player.value.toLocaleString()}</span>
+                                    <span className="font-mono text-xs opacity-80">{player.value.toLocaleString()} {category.unit}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </PillowCard>
-
-                {/* Drawer Assembly */}
-                {/* Drawer Assembly Removed - Replaced by ShadowDrawer */}
             </div>
-        </motion.div >
+        </motion.div>
     )
 }

@@ -14,8 +14,11 @@ interface SkinViewerProps {
     rotation?: number // in degrees
     rotationX?: number // in degrees
     rotationZ?: number // in degrees
+    headRotationY?: number // in radians
+    capeRotation?: number // in radians
     zoom?: number
     mouseTracking?: boolean
+    onReady?: () => void
 }
 
 export function SkinViewer({
@@ -29,8 +32,11 @@ export function SkinViewer({
     rotation = 150,
     rotationX = 0,
     rotationZ = 0,
+    headRotationY = 0,
+    capeRotation = 0,
     zoom = 0.8,
-    mouseTracking = false
+    mouseTracking = false,
+    onReady
 }: SkinViewerProps) {
     const containerRef = useRef<HTMLDivElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -40,13 +46,17 @@ export function SkinViewer({
     const rotationYRef = useRef(rotation)
     const rotationXRef = useRef(rotationX)
     const rotationZRef = useRef(rotationZ)
+    const headRotationYRef = useRef(headRotationY)
+    const capeRotationRef = useRef(capeRotation)
 
     // Keep rotation refs in sync
     useEffect(() => {
         rotationYRef.current = rotation
         rotationXRef.current = rotationX
         rotationZRef.current = rotationZ
-    }, [rotation, rotationX, rotationZ])
+        headRotationYRef.current = headRotationY
+        capeRotationRef.current = capeRotation
+    }, [rotation, rotationX, rotationZ, headRotationY, capeRotation])
 
     // 1. Initialize Viewer
     useEffect(() => {
@@ -115,8 +125,18 @@ export function SkinViewer({
             viewer.playerObject.rotation.y = (rotationYRef.current * Math.PI) / 180
             viewer.playerObject.rotation.x = (rotationXRef.current * Math.PI) / 180
             viewer.playerObject.rotation.z = (rotationZRef.current * Math.PI) / 180
+
+            // Apply Head Rotation
+            viewer.playerObject.skin.head.rotation.y = headRotationYRef.current
+            // Apply Cape Rotation if cape exists (not guaranteed on base load but good to set)
+            if (viewer.playerObject.cape.cape) {
+                viewer.playerObject.cape.rotation.x = capeRotationRef.current
+            }
+            requestAnimationFrame(() => {
+                onReady?.()
+            })
         })
-    }, [viewer, username, uuid])
+    }, [viewer, username, uuid, onReady])
 
     // 4. Handle Animation
     useEffect(() => {
@@ -152,7 +172,12 @@ export function SkinViewer({
         viewer.playerObject.rotation.y = (rotation * Math.PI) / 180
         viewer.playerObject.rotation.x = (rotationX * Math.PI) / 180
         viewer.playerObject.rotation.z = (rotationZ * Math.PI) / 180
-    }, [viewer, autoRotate, rotation, rotationX, rotationZ])
+
+        // Apply Head Rotation (only if not mouse tracking)
+        if (!mouseTracking) {
+            viewer.playerObject.skin.head.rotation.y = headRotationY
+        }
+    }, [viewer, autoRotate, rotation, rotationX, rotationZ, headRotationY, mouseTracking])
 
     // 6. Mouse Tracking
     useEffect(() => {
