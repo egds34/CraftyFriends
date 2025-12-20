@@ -23,6 +23,11 @@ export function SearchResultsClient({ query, results }: SearchResultsClientProps
 
     return (
         <div className="space-y-8">
+            {/* Debug Info */}
+            <div className="text-[10px] text-muted-foreground/20 mb-4">
+                Debug: {results.updates.length} updates, {results.players.length} players found for query
+            </div>
+
             {/* Tabs */}
             <div className="flex flex-wrap gap-4 items-center justify-between border-b border-white/10 pb-4">
                 <div className="flex gap-2 p-1 bg-white/5 backdrop-blur-md rounded-full border border-white/5">
