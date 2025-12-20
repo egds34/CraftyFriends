@@ -99,6 +99,16 @@ export function PillowDrawer({
         prevIsOpen.current = isDrawerOpen
     }, [isDrawerOpen])
 
+    // Trigger wobble on mount
+    useEffect(() => {
+        const timer1 = setTimeout(() => setIsWobbling(true), 200)
+        const timer2 = setTimeout(() => setIsWobbling(false), 1000)
+        return () => {
+            clearTimeout(timer1)
+            clearTimeout(timer2)
+        }
+    }, [])
+
     const wobbleKeyframes = {
         scaleX: [1, 1.08, 0.95, 1.02, 0.99, 1],
         scaleY: [1, 0.92, 1.05, 0.98, 1.01, 1],
@@ -123,8 +133,10 @@ export function PillowDrawer({
                 onClick={() => setIsDrawerOpen(!isDrawerOpen)}
                 layout
                 onAnimationComplete={() => !isDrawerOpen && setZIndex(1)}
-                initial={false}
+                initial={{ scale: 0, opacity: 0 }}
+                exit={{ scale: 0, opacity: 0, transition: { duration: 0.2, ease: "easeIn" } }}
                 animate={{
+                    opacity: 1,
                     height: isDrawerOpen ? "auto" : "calc(100% - 3.75rem)",
                     scale: (isHovered && !isDrawerOpen) ? 1.03 : 1,
                     ...(isWobbling && !isDrawerOpen ? wobbleKeyframes : {})
@@ -190,6 +202,7 @@ export function PillowDrawer({
                     shadowClassName="hidden"
                     onClick={() => setIsDrawerOpen(!isDrawerOpen)}
                     animateOnMount={true}
+                    forceHover={isHovered}
                 >
                     {children}
                 </PillowCard>
