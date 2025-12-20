@@ -13,6 +13,7 @@ import { CommunityGallery } from "@/components/community-gallery"
 import { VotingSection, VoteSite } from "@/components/voting-section"
 import { WhoWeAre } from "@/components/who-we-are"
 import { EventsAtAGlance } from "@/components/events-at-a-glance"
+import { LatestNewsSection } from "@/components/latest-news-section"
 import Image from "next/image"
 
 import { Event } from "@prisma/client"
@@ -164,6 +165,7 @@ export function LandingPage({ bannerImages, user, communityImages, votingSites, 
             <div className="relative z-10 bg-background">
                 <WhoWeAre />
                 <ServerMetrics />
+                <LatestNewsSection />
                 <EventsAtAGlance events={events} eventTemplates={eventTemplates} />
 
                 {/* Community & Voting Layers */}

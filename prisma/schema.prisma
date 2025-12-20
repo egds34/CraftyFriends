@@ -29,6 +29,7 @@ model User {
   subscriptions     Subscription[]
   accounts          Account[]
   sessions          Session[]
+  posts             Post[]
   passwordHistory   PasswordHistory[]
 }
 
@@ -247,4 +248,25 @@ model PlayerStatistic {
   @@unique([username, statId])
   @@index([username])
   @@index([statId])
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  excerpt   String
+  content   String   @db.Text
+  image     String
+  category  String
+  author    String
+  authorId  String
+  published Boolean  @default(true)
+  featured  Boolean  @default(false)
+  readTime  String   @default("1 min")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([featured])
+  @@index([createdAt])
 }

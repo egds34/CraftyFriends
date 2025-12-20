@@ -24,6 +24,7 @@ interface Metric {
     uploadBytes: string;
     downloadBytes: string;
     formattedTime: string;
+    onlinePlayerCount: number;
 }
 
 interface ChartPoint {
@@ -33,6 +34,7 @@ interface ChartPoint {
     cpu: number | null;
     tx: number | null;
     rx: number | null;
+    players: number | null;
     isReal: boolean;
 }
 
@@ -126,6 +128,7 @@ export function ServerMetrics() {
                 uploadBytes: payload.metrics.uploadBytes,
                 downloadBytes: payload.metrics.downloadBytes,
                 formattedTime: new Date(payload.timestamp || Date.now()).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                onlinePlayerCount: payload.metrics.onlinePlayerCount || 0,
             };
 
             // Always update global latest state for Status Cards
@@ -229,6 +232,7 @@ export function ServerMetrics() {
                     cpu: found.cpuUsage,
                     tx: Math.max(0, Math.round(txRate / 1024)),
                     rx: Math.max(0, Math.round(rxRate / 1024)),
+                    players: found.onlinePlayerCount,
                     isReal: true
                 });
             } else {
@@ -245,6 +249,7 @@ export function ServerMetrics() {
                         cpu: lastKnownMetric.cpuUsage,
                         tx: 0,
                         rx: 0,
+                        players: lastKnownMetric.onlinePlayerCount,
                         isReal: false
                     });
                 } else {
@@ -256,6 +261,7 @@ export function ServerMetrics() {
                         cpu: 0,
                         tx: 0,
                         rx: 0,
+                        players: 0,
                         isReal: false
                     });
                 }
@@ -302,7 +308,7 @@ export function ServerMetrics() {
 
     // Calculate Peaks based on current `data` (which matches timeRange)
     const peaks = useMemo(() => {
-        if (data.length === 0) return { cpu: 0, ram: 0, tps: 0, tx: 0, rx: 0 };
+        if (data.length === 0) return { cpu: 0, ram: 0, tps: 0, tx: 0, rx: 0, players: 0 };
         return data.reduce((acc, curr) => {
             const used = Number(curr.totalMemory) - Number(curr.freeMemory);
             return {
@@ -315,9 +321,10 @@ export function ServerMetrics() {
                 // We'd need to calculate rates.
                 // Let's use the calculated chartData for Network Peaks!
                 tx: acc.tx,
-                rx: acc.rx
+                rx: acc.rx,
+                players: Math.max(acc.players, curr.onlinePlayerCount)
             };
-        }, { cpu: 0, ram: 0, tps: 0, tx: 0, rx: 0 });
+        }, { cpu: 0, ram: 0, tps: 0, tx: 0, rx: 0, players: 0 });
     }, [data]);
 
     // Calculate Network Peaks from Final Chart Data (which has rates)
@@ -381,233 +388,149 @@ export function ServerMetrics() {
                     </div>
                 </motion.div>
 
-                <div className="flex flex-col gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-[95%] mx-auto auto-rows-[minmax(200px,auto)]">
 
-                    {/* TOP ROW: Status & TPS (Stair Step 1: Left) */}
-                    <div className="w-full lg:w-[85%] mr-auto grid grid-cols-1 lg:grid-cols-5 gap-8">
-                        {/* Status Card (2 cols) */}
-                        {/* Status Card (2 cols) */}
-                        <motion.div
-                            initial={{ scale: 0.8, y: 50 }}
-                            whileInView={{ scale: 1, y: 0 }}
-                            viewport={{ once: true, amount: 0.3 }}
-                            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                            className="lg:col-span-2 relative h-full min-h-[250px]"
+                    {/* 1. Status Card (1x1) */}
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        whileInView={{ scale: 1, opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.05 }}
+                        className="lg:col-span-1 h-full"
+                    >
+                        <PillowCard
+                            noHover
+                            shadowClassName={displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown'
+                                ? 'bg-emerald-500/40'
+                                : 'bg-red-500/40'}
+                            contentClassName="flex flex-col justify-center items-center text-center h-full p-8"
+                            className="w-full h-full"
                         >
-                            <PillowCard
-                                noHover
-                                shadowClassName={displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown'
-                                    ? 'bg-emerald-500/40'
-                                    : 'bg-red-500/40'}
-                                contentClassName="flex flex-col justify-center items-center text-center"
-                                className="w-full h-full"
-                            >
-                                <div className="relative mb-6">
-                                    <div className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl shadow-inner
+                            <div className="relative mb-4">
+                                <div className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-inner
                                         ${displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown'
-                                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500'
-                                            : 'bg-red-100 dark:bg-red-900/30 text-red-500'}
+                                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500'
+                                        : 'bg-red-100 dark:bg-red-900/30 text-red-500'}
                                     `}>
-                                        {displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? (
-                                            <motion.div
-                                                animate={{ scale: [1, 1.2, 1] }}
-                                                transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                                            >
-                                                <Heart className="w-10 h-10 fill-current" />
-                                            </motion.div>
-                                        ) : (
-                                            <HeartCrack className="w-10 h-10" />
-                                        )}
-                                    </div>
-                                    <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm border
-                                        ${displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown'
-                                            ? 'bg-emerald-500 border-emerald-400 text-white'
-                                            : 'bg-red-500 border-red-400 text-white'}
-                                    `}>
-                                        {displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? 'Online' : 'Offline'}
-                                    </div>
+                                    {displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? (
+                                        <motion.div
+                                            animate={{ scale: [1, 1.2, 1] }}
+                                            transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                                        >
+                                            <Heart className="w-8 h-8 fill-current" />
+                                        </motion.div>
+                                    ) : (
+                                        <HeartCrack className="w-8 h-8" />
+                                    )}
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Uptime</p>
-                                    <p className="text-2xl font-black text-foreground font-heading">
-                                        {displayLatest ? (
-                                            <UptimeCounter
-                                                startTime={displayLatest.startTime}
-                                                status={displayLatest.status}
-                                            />
-                                        ) : '...'}
+                                <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm border
+                                        ${displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown'
+                                        ? 'bg-emerald-500 border-emerald-400 text-white'
+                                        : 'bg-red-500 border-red-400 text-white'}
+                                    `}>
+                                    {displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown' ? 'Online' : 'Offline'}
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Uptime</p>
+                                <p className="text-xl font-black text-foreground font-heading">
+                                    {displayLatest ? (
+                                        <UptimeCounter
+                                            startTime={displayLatest.startTime}
+                                            status={displayLatest.status}
+                                        />
+                                    ) : '...'}
+                                </p>
+                            </div>
+                        </PillowCard>
+                    </motion.div>
+
+                    {/* 2. Players Graph (2x2 - The Hero Tile) */}
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        whileInView={{ scale: 1, opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
+                        className="md:col-span-2 lg:col-span-2 lg:row-span-2 h-full"
+                    >
+                        <PillowCard
+                            noHover
+                            shadowClassName="bg-indigo-600/40"
+                            contentClassName="flex flex-col h-full"
+                            className="w-full h-full"
+                        >
+                            <div className="flex flex-wrap gap-4 justify-between items-center mb-6">
+                                <div>
+                                    <h3 className="font-bold text-2xl flex items-center gap-2">
+                                        Community Activity
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground">Live player trends</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-5xl font-black text-indigo-500">
+                                        {displayLatest.onlinePlayerCount || 0}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground font-medium mt-1 uppercase tracking-tighter">
+                                        Peak: {peaks.players || 0}
                                     </p>
                                 </div>
-                            </PillowCard>
-                        </motion.div>
+                            </div>
+                            <div className="flex-grow w-full min-h-[300px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={finalChartData}>
+                                        <defs>
+                                            <linearGradient id="colorPlayers" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', border: 'none', borderRadius: '16px', padding: '12px' }}
+                                            labelStyle={{ color: '#71717a', fontWeight: 'bold', marginBottom: '4px' }}
+                                            formatter={(value: number) => [value, "Players"]}
+                                            labelFormatter={(label) => new Date(label).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                        />
+                                        <XAxis
+                                            dataKey="timestamp"
+                                            type="number"
+                                            domain={[xDomainMin, xDomainMax]}
+                                            ticks={ticks}
+                                            tick={<CustomAxisTick showSeconds={timeRange === '1m'} />}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            height={30}
+                                            interval={0}
+                                        />
+                                        <Area type="monotone" name="Players" dataKey="players" stroke="#6366f1" strokeWidth={5} fill="url(#colorPlayers)" animationDuration={1000} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </PillowCard>
+                    </motion.div>
 
-                        {/* TPS Card (3 cols) */}
-                        <motion.div
-                            initial={{ scale: 0.8, y: 50 }}
-                            whileInView={{ scale: 1, y: 0 }}
-                            viewport={{ once: true, amount: 0.3 }}
-                            transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
-                            className="lg:col-span-3 h-full relative"
+                    {/* 3. CPU Load (1x1) */}
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        whileInView={{ scale: 1, opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.15 }}
+                        className="lg:col-span-1 h-full"
+                    >
+                        <PillowCard
+                            noHover
+                            shadowClassName="bg-purple-600/40"
+                            contentClassName="flex flex-col justify-between h-full p-8"
+                            className="w-full h-full"
                         >
-                            <PillowCard
-                                noHover
-                                shadowClassName="bg-amber-600/40"
-                                contentClassName="flex flex-col justify-between"
-                                className="w-full h-full"
-                            >
-                                <div className="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 className="font-bold text-xl flex items-center gap-2">
-                                            Server Tick Rate
-                                        </h3>
-                                        <p className="text-sm text-muted-foreground">Performance (Target: 20.0)</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className={`text-4xl font-black ${displayLatest.tps > 19 ? 'text-emerald-500' : 'text-amber-500'}`}>
-                                            {displayLatest.tps.toFixed(1)}
-                                        </div>
-                                        <p className="text-xs text-muted-foreground font-medium mt-1">
-                                            Peak: {peaks.tps.toFixed(1)}
-                                        </p>
-                                    </div>
+                            <div className="flex justify-between items-end mb-4">
+                                <h3 className="font-bold text-lg leading-none">CPU</h3>
+                                <div className="text-right">
+                                    <span className="text-3xl font-black text-purple-500">{displayLatest.cpuUsage.toFixed(0)}%</span>
+                                    <p className="text-[10px] text-muted-foreground mt-1 uppercase">Peak: {peaks.cpu.toFixed(0)}%</p>
                                 </div>
-                                <div className="h-[140px] w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={finalChartData}>
-                                            <defs>
-                                                <linearGradient id="colorTpsCute" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.2} />
-                                                    <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', border: 'none', borderRadius: '16px', padding: '12px' }}
-                                                labelStyle={{ color: '#71717a', fontWeight: 'bold', marginBottom: '4px' }}
-                                                formatter={(value: number) => [value.toFixed(2), "TPS"]}
-                                                labelFormatter={(label) => new Date(label).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                            />
-                                            <XAxis
-                                                dataKey="timestamp"
-                                                type="number"
-                                                domain={[xDomainMin, xDomainMax]}
-                                                ticks={ticks}
-                                                tick={<CustomAxisTick showSeconds={timeRange === '1m'} />}
-                                                axisLine={false}
-                                                tickLine={false}
-                                                height={30}
-                                                interval={0}
-                                            />
-                                            <Area type="monotone" name="TPS" dataKey="tps" stroke="#fbbf24" strokeWidth={4} fill="url(#colorTpsCute)" animationDuration={1000} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </PillowCard>
-                        </motion.div>
-                    </div>
-
-                    {/* MIDDLE ROW: Network Graph (Stair Step 2: Center) */}
-                    <div className="w-full lg:w-[85%] mx-auto">
-                        <motion.div
-                            initial={{ scale: 0.8, y: 50 }}
-                            whileInView={{ scale: 1, y: 0 }}
-                            viewport={{ once: true, amount: 0.3 }}
-                            transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
-                            className="relative"
-                        >
-                            <PillowCard
-                                noHover
-                                shadowClassName="bg-sky-600/40"
-                                className="w-full"
-                            >
-                                <div className="flex flex-wrap gap-6 justify-between items-center mb-6">
-                                    <div>
-                                        <h3 className="font-bold text-xl flex items-center gap-2">
-                                            Network Activity
-                                        </h3>
-                                    </div>
-                                    <div className="flex gap-6">
-                                        <div className="text-right">
-                                            <p className="text-xs text-muted-foreground font-bold uppercase">Incoming</p>
-                                            <p className="text-xl font-black text-pink-500">
-                                                {finalChartData.length > 0 ? finalChartData[finalChartData.length - 1].rx : 0} <span className="text-sm">KB/s</span>
-                                            </p>
-                                            <p className="text-xs text-muted-foreground mt-1">Peak: {netPeaks.rx} KB/s</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-xs text-muted-foreground font-bold uppercase">Outgoing</p>
-                                            <p className="text-xl font-black text-sky-500">
-                                                {finalChartData.length > 0 ? finalChartData[finalChartData.length - 1].tx : 0} <span className="text-sm">KB/s</span>
-                                            </p>
-                                            <p className="text-xs text-muted-foreground mt-1">Peak: {netPeaks.tx} KB/s</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="h-[200px] w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={finalChartData}>
-                                            <defs>
-                                                <linearGradient id="colorRx" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#f472b6" stopOpacity={0.2} />
-                                                    <stop offset="95%" stopColor="#f472b6" stopOpacity={0} />
-                                                </linearGradient>
-                                                <linearGradient id="colorTx" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.2} />
-                                                    <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', border: 'none', borderRadius: '16px', padding: '12px' }}
-                                                labelStyle={{ color: '#71717a', fontWeight: 'bold', marginBottom: '4px' }}
-                                                formatter={(value: number, name: string) => [`${value} KB/s`, name]}
-                                                labelFormatter={(label) => new Date(label).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                            />
-                                            <XAxis
-                                                dataKey="timestamp"
-                                                type="number"
-                                                domain={[xDomainMin, xDomainMax]}
-                                                ticks={ticks}
-                                                tick={<CustomAxisTick showSeconds={timeRange === '1m'} />}
-                                                axisLine={false}
-                                                tickLine={false}
-                                                height={30}
-                                                interval={0}
-                                            />
-                                            <Area type="monotone" name="Download" dataKey="rx" stroke="#f472b6" strokeWidth={3} fill="url(#colorRx)" animationDuration={1000} />
-                                            <Area type="monotone" name="Upload" dataKey="tx" stroke="#38bdf8" strokeWidth={3} fill="url(#colorTx)" animationDuration={1000} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </PillowCard>
-                        </motion.div>
-                    </div>
-
-                    {/* BOTTOM ROW: CPU & RAM (Stair Step 3: Right) */}
-                    <div className="w-full lg:w-[85%] ml-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* CPU */}
-                        <motion.div
-                            initial={{ scale: 0.8, y: 50 }}
-                            whileInView={{ scale: 1, y: 0 }}
-                            viewport={{ once: true, amount: 0.3 }}
-                            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                            className="relative"
-                        >
-                            <PillowCard
-                                noHover
-                                shadowClassName="bg-purple-600/40"
-                                className="w-full h-full"
-                            >
-                                <div className="flex justify-between items-end mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div>
-                                            <h3 className="font-bold text-lg leading-none">CPU Load</h3>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="text-3xl font-black text-purple-500">{displayLatest.cpuUsage.toFixed(1)}%</span>
-                                        <p className="text-xs text-muted-foreground mt-1">Peak: {peaks.cpu.toFixed(1)}%</p>
-                                    </div>
-                                </div>
-                                <div className="h-8 w-full bg-secondary/50 rounded-full overflow-hidden shadow-inner ring-1 ring-black/5 dark:ring-white/5 p-1.5">
+                            </div>
+                            <div className="flex-grow flex items-center justify-center">
+                                <div className="h-6 w-full bg-secondary/50 rounded-full overflow-hidden shadow-inner ring-1 ring-black/5 dark:ring-white/5 p-1">
                                     <motion.div
                                         className="h-full bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full shadow-sm"
                                         initial={{ width: 0 }}
@@ -615,35 +538,81 @@ export function ServerMetrics() {
                                         transition={{ type: "spring", stiffness: 50 }}
                                     />
                                 </div>
-                            </PillowCard>
-                        </motion.div>
+                            </div>
+                            <div className="text-center mt-2">
+                                <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">System Load</p>
+                            </div>
+                        </PillowCard>
+                    </motion.div>
 
-                        {/* RAM */}
-                        <motion.div
-                            initial={{ scale: 0.8, y: 50 }}
-                            whileInView={{ scale: 1, y: 0 }}
-                            viewport={{ once: true, amount: 0.3 }}
-                            transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
-                            className="relative"
+                    {/* 4. TPS (1x1) */}
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        whileInView={{ scale: 1, opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
+                        className="lg:col-span-1 h-full"
+                    >
+                        <PillowCard
+                            noHover
+                            shadowClassName="bg-amber-600/40"
+                            contentClassName="flex flex-col justify-between h-full p-8"
+                            className="w-full h-full"
                         >
-                            <PillowCard
-                                noHover
-                                shadowClassName="bg-pink-600/40"
-                                className="w-full h-full"
-                            >
-                                <div className="flex justify-between items-end mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div>
-                                            <h3 className="font-bold text-lg leading-none">RAM Usage</h3>
-                                            <span className="text-xs text-muted-foreground font-bold">{usedGB}GB / {maxGB}GB</span>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="text-3xl font-black text-pink-500">{memPercentage}%</span>
-                                        <p className="text-xs text-muted-foreground mt-1">Peak: {((peaks.ram / 1024 / 1024 / 1024) || 0).toFixed(1)}GB</p>
-                                    </div>
+                            <div className="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 className="font-bold text-lg flex items-center gap-2">
+                                        TPS
+                                    </h3>
                                 </div>
-                                <div className="h-8 w-full bg-secondary/50 rounded-full overflow-hidden shadow-inner ring-1 ring-black/5 dark:ring-white/5 p-1.5">
+                                <div className="text-right">
+                                    <div className={`text-3xl font-black ${displayLatest.tps > 19 ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                        {displayLatest.tps.toFixed(1)}
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground font-bold uppercase">
+                                        Target: 20.0
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="h-[100px] w-full mt-auto opacity-70">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={finalChartData}>
+                                        <defs>
+                                            <linearGradient id="colorTpsCute" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <Area type="monotone" name="TPS" dataKey="tps" stroke="#fbbf24" strokeWidth={3} fill="url(#colorTpsCute)" animationDuration={1000} isAnimationActive={false} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </PillowCard>
+                    </motion.div>
+
+                    {/* 5. RAM (1x1) */}
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        whileInView={{ scale: 1, opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.3 }}
+                        className="lg:col-span-1 h-full"
+                    >
+                        <PillowCard
+                            noHover
+                            shadowClassName="bg-pink-600/40"
+                            contentClassName="flex flex-col justify-between h-full p-8"
+                            className="w-full h-full"
+                        >
+                            <div className="flex justify-between items-end mb-4">
+                                <h3 className="font-bold text-lg leading-none">RAM</h3>
+                                <div className="text-right">
+                                    <span className="text-3xl font-black text-pink-500">{memPercentage}%</span>
+                                    <p className="text-[10px] text-muted-foreground mt-1 font-bold">{usedGB}/{maxGB} GB</p>
+                                </div>
+                            </div>
+                            <div className="flex-grow flex items-center justify-center">
+                                <div className="h-6 w-full bg-secondary/50 rounded-full overflow-hidden shadow-inner ring-1 ring-black/5 dark:ring-white/5 p-1">
                                     <motion.div
                                         className="h-full bg-gradient-to-r from-pink-400 to-rose-400 rounded-full shadow-sm"
                                         initial={{ width: 0 }}
@@ -651,12 +620,90 @@ export function ServerMetrics() {
                                         transition={{ type: "spring", stiffness: 50 }}
                                     />
                                 </div>
-                            </PillowCard>
-                        </motion.div>
-                    </div>
+                            </div>
+                            <div className="text-center mt-2">
+                                <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">Memory Usage</p>
+                            </div>
+                        </PillowCard>
+                    </motion.div>
+
+                    {/* 6. Network (4x1 - Wide Base) */}
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        whileInView={{ scale: 1, opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.25 }}
+                        className="md:col-span-2 lg:col-span-4 h-full"
+                    >
+                        <PillowCard
+                            noHover
+                            shadowClassName="bg-sky-600/40"
+                            contentClassName="flex flex-col h-full p-8"
+                            className="w-full h-full"
+                        >
+                            <div className="flex flex-wrap gap-4 justify-between items-center mb-6">
+                                <div>
+                                    <h3 className="font-bold text-2xl flex items-center gap-2">
+                                        Global Traffic
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground">Network throughput in KB/s</p>
+                                </div>
+                                <div className="flex gap-8 text-right">
+                                    <div>
+                                        <p className="text-xs text-muted-foreground font-black uppercase tracking-widest mb-1">Download</p>
+                                        <p className="text-3xl font-black text-pink-500">
+                                            {finalChartData.length > 0 ? finalChartData[finalChartData.length - 1].rx : 0} <span className="text-sm font-normal text-muted-foreground">KB/s</span>
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground font-black uppercase tracking-widest mb-1">Upload</p>
+                                        <p className="text-3xl font-black text-sky-500">
+                                            {finalChartData.length > 0 ? finalChartData[finalChartData.length - 1].tx : 0} <span className="text-sm font-normal text-muted-foreground">KB/s</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="h-[180px] w-full mt-auto">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={finalChartData}>
+                                        <defs>
+                                            <linearGradient id="colorRx" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#f472b6" stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor="#f472b6" stopOpacity={0} />
+                                            </linearGradient>
+                                            <linearGradient id="colorTx" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', border: 'none', borderRadius: '16px', padding: '12px' }}
+                                            labelStyle={{ color: '#71717a', fontWeight: 'bold', marginBottom: '4px' }}
+                                            formatter={(value: number, name: string) => [`${value} KB/s`, name]}
+                                            labelFormatter={(label) => new Date(label).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                        />
+                                        <XAxis
+                                            dataKey="timestamp"
+                                            type="number"
+                                            domain={[xDomainMin, xDomainMax]}
+                                            ticks={ticks}
+                                            tick={<CustomAxisTick showSeconds={timeRange === '1m'} />}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            height={30}
+                                            interval={0}
+                                        />
+                                        <Area type="monotone" name="Download" dataKey="rx" stroke="#f472b6" strokeWidth={4} fill="url(#colorRx)" animationDuration={1000} />
+                                        <Area type="monotone" name="Upload" dataKey="tx" stroke="#38bdf8" strokeWidth={4} fill="url(#colorTx)" animationDuration={1000} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </PillowCard>
+                    </motion.div>
 
                 </div>
             </div>
-        </section>
+        </section >
     );
 }
+
