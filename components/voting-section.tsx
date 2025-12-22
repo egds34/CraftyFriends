@@ -19,7 +19,7 @@ export function VotingSection({ sites }: VotingSectionProps) {
     if (!sites || sites.length === 0) return null
 
     return (
-        <section className="py-20 relative z-10 bg-muted/50">
+        <section className="py-20 relative z-10">
             <div className="container px-4 mx-auto text-center">
                 <div className="flex flex-col items-center justify-center mb-12">
                     <h2 className="text-3xl md:text-5xl font-heading font-extrabold mb-4 text-primary tracking-tight">Vote for Us!</h2>
@@ -44,7 +44,6 @@ export function VotingSection({ sites }: VotingSectionProps) {
                                 className="group block h-full"
                             >
                                 <PillowCard
-                                    noHover
                                     shadowClassName={`transition-colors duration-300 ${[
                                         "bg-red-500/40",
                                         "bg-orange-500/40",
@@ -56,7 +55,7 @@ export function VotingSection({ sites }: VotingSectionProps) {
                                         "bg-purple-500/40",
                                         "bg-pink-500/40"
                                     ][index % 9]}`}
-                                    className="transition-transform duration-300 h-full"
+                                    className="h-full"
                                     contentClassName="flex items-center gap-4 p-6"
                                     shadowTop="top-5"
                                 >

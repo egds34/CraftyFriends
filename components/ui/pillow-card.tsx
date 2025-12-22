@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Squircle } from "@/components/ui/squircle";
@@ -20,8 +18,10 @@ interface PillowCardProps extends React.HTMLAttributes<HTMLDivElement> {
     shadowRight?: string;
     /** If true, triggers the enter animation immediately on mount instead of waiting for viewport */
     animateOnMount?: boolean;
-    /** Force the hover state externally */
+    /** If true, forces the card into its hover state */
     forceHover?: boolean;
+    /** If true, disables the hover effect */
+    noHover?: boolean;
 }
 
 export function PillowCard({
@@ -37,11 +37,11 @@ export function PillowCard({
     animateOnMount = false,
     forceHover = false,
     ...props
-}: PillowCardProps & { noHover?: boolean }) {
+}: PillowCardProps) {
     const [animationState, setAnimationState] = useState<'idle' | 'enter' | 'rest'>('idle');
-    const [internalIsHovered, setInternalIsHovered] = useState(false);
+    const [internalHover, setInternalHover] = useState(false);
 
-    const isHovered = forceHover || internalIsHovered;
+    const isHovered = internalHover || forceHover;
 
     const wobbleKeyframes = {
         scaleX: [1, 1.08, 0.95, 1.02, 0.99, 1],
@@ -63,31 +63,24 @@ export function PillowCard({
     }, [animateOnMount, animationState]);
 
     // Determine the current variant for the shadow
-    const shadowVariant = !noHover && isHovered ? 'hover' : animationState === 'idle' ? 'idle' : animationState;
+    const shadowVariant = !noHover && isHovered ? 'hover' : animationState;
 
     return (
         <motion.div
             className={cn("relative z-0 bg-transparent", className)}
-            onHoverStart={() => !noHover && setInternalIsHovered(true)}
-            onHoverEnd={() => !noHover && setInternalIsHovered(false)}
+            onHoverStart={() => !noHover && setInternalHover(true)}
+            onHoverEnd={() => !noHover && setInternalHover(false)}
             onViewportEnter={() => {
                 if (animationState === 'idle') setAnimationState('enter');
             }}
             viewport={{ once: true }}
-            whileHover={!noHover && !forceHover ? "hover" : undefined}
-            initial="hidden"
-            exit="exit"
-            animate={isHovered ? 'hover' : (animationState === 'idle' ? 'hidden' : 'visible')}
+            whileHover={!noHover ? "hover" : undefined}
+            initial="idle"
+            animate={animationState === 'idle' ? 'idle' : 'visible'}
             variants={{
-                hidden: { scale: 0, opacity: 0 },
-                idle: { scale: 1, opacity: 1 },
-                visible: { scale: 1, opacity: 1 },
-                hover: { scale: 1.03, opacity: 1 },
-                exit: {
-                    scale: 0,
-                    opacity: 0,
-                    transition: { duration: 0.2 }
-                }
+                idle: { scale: 1 },
+                visible: { scale: 1 },
+                hover: { scale: 1.03 }
             }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
             {...props as any}
@@ -95,10 +88,8 @@ export function PillowCard({
             {/* Disconnected Shadow */}
             <motion.div
                 animate={shadowVariant}
-                exit="exit"
                 variants={{
-                    hidden: { opacity: 0, scale: 0 },
-                    idle: { opacity: 0, scale: 0 },
+                    idle: { opacity: 0, scale: 0.8 },
                     enter: {
                         opacity: 1,
                         scale: 1,
@@ -128,11 +119,6 @@ export function PillowCard({
                             scaleY: wobbleTransition,
                             x: { ...wobbleTransition, ease: "easeInOut" }
                         }
-                    },
-                    exit: {
-                        opacity: 0,
-                        scale: 0,
-                        transition: { duration: 0.2 }
                     }
                 }}
                 onAnimationComplete={(definition) => {

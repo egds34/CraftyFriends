@@ -21,18 +21,18 @@ interface UpdateDetailViewProps {
 
 export function UpdateDetailView({ update, isPreview = false }: UpdateDetailViewProps) {
     return (
-        <article className="min-h-screen bg-black text-foreground pt-24 pb-20 relative">
-            {/* Background elements - Only show if NOT in preview mode to avoid stacking weirdness? 
-                Or show them but maybe contained? 
-                If preview is split screen, we might want to contain this. 
-                Let's assume this view renders the FULL PAGE content. 
-            */}
+        <article className="min-h-screen bg-background text-foreground pt-24 pb-20 relative transition-colors duration-500">
+            {/* Background elements */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-[120px]" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-[120px]" />
+            </div>
 
             <div className="container mx-auto px-4 md:px-8 max-w-4xl relative z-10">
                 {/* Back Button - Hide in preview */}
                 {!isPreview && (
                     <Link href="/updates" className="inline-flex mb-8">
-                        <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-white pl-0 hover:pl-2 transition-all">
+                        <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground pl-0 hover:pl-2 transition-all">
                             <ArrowLeft className="w-4 h-4" />
                             Back to Updates
                         </Button>
@@ -42,7 +42,7 @@ export function UpdateDetailView({ update, isPreview = false }: UpdateDetailView
                 {/* Hero Header */}
                 <header className="mb-12">
                     <div className="flex flex-wrap items-center gap-4 mb-6">
-                        <Badge variant="secondary" className="bg-primary/20 text-primary hover:bg-primary/30 text-sm py-1 px-3 border-transparent">
+                        <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-sm py-1 px-4 border-transparent rounded-full font-bold">
                             {update.category.replace('-', ' ')}
                         </Badge>
                         <span className="text-sm text-muted-foreground flex items-center gap-2">
@@ -51,42 +51,44 @@ export function UpdateDetailView({ update, isPreview = false }: UpdateDetailView
                         </span>
                     </div>
 
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold font-heading tracking-tight mb-8 text-white leading-tight">
+                    <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold font-heading tracking-tight mb-8 text-foreground leading-tight">
                         {update.title || "Untitled Post"}
                     </h1>
 
-                    <div className="flex items-center justify-between border-y border-white/10 py-6">
-                        <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-muted/20 flex items-center justify-center border border-white/10">
-                                    <User className="w-5 h-5 text-primary" />
+                    <div className="flex items-center justify-between border-y border-border py-8">
+                        <div className="flex items-center gap-8">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center border border-border">
+                                    <User className="w-6 h-6 text-primary" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-white">{update.author || "Unknown Author"}</p>
-                                    <p className="text-xs text-muted-foreground">Author</p>
+                                    <p className="text-sm font-bold text-foreground">{update.author || "Unknown Author"}</p>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-widest">Author</p>
                                 </div>
                             </div>
-                            <div className="h-8 w-[1px] bg-white/10 hidden sm:block" />
-                            <div className="flex items-center gap-3 hidden sm:flex">
-                                <Clock className="w-5 h-5 text-muted-foreground" />
+                            <div className="h-10 w-[1px] bg-border hidden sm:block" />
+                            <div className="flex items-center gap-4 hidden sm:flex">
+                                <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center border border-border">
+                                    <Clock className="w-6 h-6 text-muted-foreground" />
+                                </div>
                                 <div>
-                                    <p className="text-sm font-medium text-white">{update.readTime || "1 min"}</p>
-                                    <p className="text-xs text-muted-foreground">Read Time</p>
+                                    <p className="text-sm font-bold text-foreground">{update.readTime || "1 min"}</p>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-widest">Read Time</p>
                                 </div>
                             </div>
                         </div>
 
                         {!isPreview && (
-                            <Button variant="outline" size="sm" className="gap-2 border-white/10 hover:bg-white/5">
+                            <Button variant="outline" size="lg" className="gap-2 rounded-full border-border hover:bg-muted font-bold">
                                 <Share2 className="w-4 h-4" />
-                                <span className="hidden sm:inline">Share</span>
+                                <span className="hidden sm:inline">Share Article</span>
                             </Button>
                         )}
                     </div>
                 </header>
 
                 {/* Main Content */}
-                <div className="relative aspect-video w-full rounded-xl overflow-hidden mb-12 border border-white/10 shadow-2xl bg-muted/10">
+                <div className="relative aspect-video w-full rounded-3xl overflow-hidden mb-16 border border-border shadow-2xl bg-muted/20">
                     {update.image ? (
                         <Image
                             src={update.image}
@@ -94,14 +96,14 @@ export function UpdateDetailView({ update, isPreview = false }: UpdateDetailView
                             fill
                             className="object-cover"
                             priority
-                            unoptimized={isPreview} // Avoid optimization issues with transient URLs if any
+                            unoptimized={isPreview}
                         />
                     ) : (
-                        <div className="flex items-center justify-center h-full text-muted-foreground">No Cover Image</div>
+                        <div className="flex items-center justify-center h-full text-muted-foreground font-heading italic">No Cover Image</div>
                     )}
                 </div>
 
-                <div className="prose prose-invert prose-lg max-w-none prose-headings:font-heading prose-headings:font-bold prose-p:text-muted-foreground/90 prose-a:text-primary prose-img:rounded-xl">
+                <div className="prose dark:prose-invert prose-lg max-w-none prose-headings:font-heading prose-headings:font-black prose-p:text-foreground/80 prose-a:text-primary prose-img:rounded-3xl prose-strong:text-foreground">
                     <div dangerouslySetInnerHTML={{ __html: update.content || "<p>Start writing...</p>" }} />
                 </div>
             </div>

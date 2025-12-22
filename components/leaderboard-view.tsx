@@ -59,9 +59,9 @@ export function LeaderboardView({ isAuthenticated = false }: { isAuthenticated?:
     const sectionOrder = ["Distance", "Combat", "General"]
 
     return (
-        <div className="space-y-8 pb-12 overflow-x-hidden container mx-auto px-4 md:px-8">
-            <div className="text-center space-y-4 pt-8">
-                <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">Server Leaders</h1>
+        <div className="space-y-8 pb-12 container mx-auto px-4 md:px-8 pt-24">
+            <div className="text-center space-y-4">
+                <h1 className="text-4xl font-extrabold font-heading tracking-tight lg:text-5xl">Server Leaders</h1>
                 <p className="text-lg text-muted-foreground">Top players across various categories</p>
             </div>
 
@@ -322,17 +322,19 @@ function AggregateCard({
                         }
                     }
             }
-            className={`flex flex-col w-full relative group flex-shrink-0 rounded-3xl overflow-hidden ${className}`}
+            style={{ zIndex: isOpen || isHovering ? 40 : 1 }}
+            className={`flex flex-col w-full relative group/aggregate flex-shrink-0 rounded-3xl ${className}`}
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
         >
             {/* Ambient Glow behind the card */}
-            < div className="absolute inset-8 bg-indigo-500/30 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            < div className="absolute inset-8 bg-primary/30 blur-2xl rounded-full opacity-0 group-hover/aggregate:opacity-100 transition-opacity duration-700" />
 
             <PillowDrawer
                 className="flex-1 h-full"
                 colors={color}
                 onOpenChange={handleOpenChange}
+                shadowBottom="-bottom-6"
                 drawerContent={
                     <>
                         <motion.div layout className="relative" onClick={(e) => e.stopPropagation()}>
@@ -386,7 +388,7 @@ function AggregateCard({
                             <img
                                 src={bgImage}
                                 alt={category.displayName}
-                                className="w-full h-full object-cover opacity-90 group-hover:scale-110 transition-transform duration-700"
+                                className={`w-full h-full object-cover opacity-90 transition-transform duration-700 ease-out will-change-transform ${isHovering ? "scale-110" : "scale-100"}`}
                             />
                             {/* Disclaimer - Only visible if we have an image */}
                             <div className="absolute top-2 right-3 z-30 pointer-events-none">
@@ -396,7 +398,7 @@ function AggregateCard({
                             </div>
                         </div>
                     ) : (
-                        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-500/80 via-purple-600/80 to-indigo-900/80 group-hover:scale-110 transition-transform duration-700" />
+                        <div className={`absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-500/80 via-purple-600/80 to-indigo-900/80 transition-transform duration-700 ease-out will-change-transform ${isHovering ? "scale-110" : "scale-100"}`} />
                     )}
 
                     {/* Hover Sheen Effect */}
@@ -605,9 +607,9 @@ function LeaderboardCard({
 
     useEffect(() => {
         if (isDrawerOpen) {
-            setZIndex(50)
+            setZIndex(40)
         } else {
-            setZIndex(prev => prev === 50 ? 20 : prev)
+            setZIndex(prev => prev === 40 ? 20 : prev)
         }
     }, [isDrawerOpen])
 
@@ -632,7 +634,7 @@ function LeaderboardCard({
             layout
             ref={cardRef} // Attach ref for scrolling
             className={`flex h-48 w-full relative group flex-shrink-0 transition-all duration-500 ease-in-out scroll-m-24 ${isDrawerOpen ? "mb-16" : "mb-0"}`}
-            style={{ zIndex: 1, willChange: "transform, opacity" }}
+            style={{ zIndex: zIndex, willChange: "transform, opacity" }}
         >
             <div
                 className="absolute left-0 top-0 bottom-0 w-40 flex items-center justify-center z-0 cursor-pointer"

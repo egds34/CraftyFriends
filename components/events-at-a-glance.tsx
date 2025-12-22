@@ -31,7 +31,7 @@ export function EventsAtAGlance({ events, eventTemplates }: EventsAtAGlanceProps
     ) : null
 
     return (
-        <section className="py-24 bg-background relative overflow-hidden text-black">
+        <section className="py-24 relative overflow-hidden text-foreground">
             <div className="container px-4 mx-auto">
                 <div className="text-center mb-16">
                     <h2 className="text-4xl md:text-5xl font-heading font-bold mb-4">

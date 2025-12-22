@@ -1,11 +1,10 @@
 import "dotenv/config"
 import { PrismaClient } from "@prisma/client"
 import { ADVANCEMENTS_DATA } from "../lib/advancements-data"
-
 const prisma = new PrismaClient({
     // @ts-ignore
     accelerateUrl: process.env.DATABASE_URL
-} as any)
+})
 
 const SEED_DATA = {
     "serverName": "Survival-1",

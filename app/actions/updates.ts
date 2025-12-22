@@ -54,7 +54,7 @@ export async function createPost(prevState: any, formData: FormData) {
                 category,
                 featured,
                 readTime,
-                author: session.user.name || "Admin",
+                author: "Crafty Friends Team",
                 authorId: session.user.id,
                 published: true,
             }
@@ -64,6 +64,48 @@ export async function createPost(prevState: any, formData: FormData) {
         return { success: true, message: "Post created successfully!" };
     } catch (error) {
         console.error("Failed to create post:", error);
+        return { success: false, message: "Database error" };
+    }
+}
+
+
+export async function updatePost(id: string, formData: FormData) {
+    const session = await auth();
+
+    if (!session?.user || session.user.role !== Role.ADMIN) {
+        return { success: false, message: "Unauthorized" };
+    }
+
+    const rawData = {
+        title: formData.get("title"),
+        excerpt: formData.get("excerpt"),
+        content: formData.get("content"),
+        image: formData.get("image"),
+        category: formData.get("category"),
+        featured: formData.get("featured") === "true",
+        readTime: formData.get("readTime") || "1 min",
+    };
+
+    const validated = createPostSchema.safeParse(rawData);
+
+    if (!validated.success) {
+        return { success: false, message: "Validation failed", errors: validated.error.flatten().fieldErrors };
+    }
+
+    try {
+        await prisma.post.update({
+            where: { id },
+            data: {
+                ...validated.data,
+                // Do not update author
+            }
+        });
+
+        revalidatePath("/updates");
+        revalidatePath(`/updates/${id}`);
+        return { success: true, message: "Post updated successfully!" };
+    } catch (error) {
+        console.error("Failed to update post:", error);
         return { success: false, message: "Database error" };
     }
 }

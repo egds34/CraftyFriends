@@ -10,13 +10,18 @@ import { notFound } from "next/navigation";
 export const dynamic = 'force-dynamic';
 
 interface ProfilePageProps {
-    params: {
+    params: Promise<{
         username: string;
-    };
+    }>;
+    searchParams: Promise<{
+        q?: string;
+    }>;
 }
 
-export default async function ProfilePage({ params }: ProfilePageProps) {
-    const profile = await getPlayerDetails(params.username);
+export default async function ProfilePage({ params, searchParams }: ProfilePageProps) {
+    const { username } = await params;
+    const { q } = await searchParams;
+    const profile = await getPlayerDetails(username);
 
     if (!profile) {
         notFound();
@@ -31,7 +36,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             </div>
 
             <div className="container mx-auto px-4 md:px-8 relative z-10">
-                <Link href="/search" className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8 group">
+                <Link
+                    href={q ? `/search?q=${encodeURIComponent(q)}` : "/search"}
+                    className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8 group"
+                >
                     <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                     Back to Search
                 </Link>

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from "framer-motion"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { SideMenu } from "@/components/side-menu"
 import { NavbarAuthButtons } from "@/components/navbar-auth"
 import { UserNav } from "@/components/user-nav"
@@ -28,6 +28,7 @@ interface NavbarClientProps {
 }
 
 export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
+    const router = useRouter()
     const { scrollY } = useScroll()
     const pathname = usePathname()
     const isHome = pathname === "/"
@@ -153,7 +154,7 @@ export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
                                 const formData = new FormData(e.currentTarget);
                                 const query = formData.get('q');
                                 if (query && typeof query === 'string' && query.trim().length > 0) {
-                                    window.location.href = `/search?q=${encodeURIComponent(query)}`;
+                                    router.push(`/search?q=${encodeURIComponent(query)}`);
                                 }
                             }}
                             className="relative"

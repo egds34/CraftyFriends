@@ -19,12 +19,27 @@ export type SearchResults = {
         image: string | null;
         minecraftUsername: string | null;
     }[];
+    events: {
+        id: string;
+        title: string;
+        description: string | null;
+        startTime: Date;
+        type: string;
+    }[];
+    eventGuides: {
+        id: string;
+        title: string;
+        description: string;
+        image: string;
+        howTo: string[];
+        rules: string[];
+    }[];
 };
 
 export async function searchGlobal(query: string): Promise<SearchResults> {
     try {
         if (!query || query.trim().length === 0) {
-            return { updates: [], players: [] };
+            return { updates: [], players: [], events: [], eventGuides: [] };
         }
 
         const cleanQuery = query.trim();
@@ -36,14 +51,8 @@ export async function searchGlobal(query: string): Promise<SearchResults> {
         // Check if prisma is undefined
         if (!prisma) {
             console.error("[Search] Prisma client is undefined!");
-            return { updates: [], players: [] };
+            return { updates: [], players: [], events: [], eventGuides: [] };
         }
-
-        // Log count of all users and stats in the DB
-        const userCount = await prisma.user.count();
-        const statsCount = await prisma.playerStatistic.count();
-        const postCount = await prisma.post.count();
-        console.log(`[Search] DB Status: Users=${userCount}, Stats=${statsCount}, Posts=${postCount}`);
 
         // Search Posts (Updates)
         const updates = await prisma.post.findMany({
@@ -71,7 +80,39 @@ export async function searchGlobal(query: string): Promise<SearchResults> {
             take: 10,
         });
 
-        // 1. Search Registered Users
+        // Search Events
+        const events = await prisma.event.findMany({
+            where: {
+                OR: [
+                    { title: { contains: cleanQuery, mode: 'insensitive' } },
+                    { description: { contains: cleanQuery, mode: 'insensitive' } },
+                ]
+            } as any,
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                startTime: true,
+                type: true,
+            },
+            orderBy: {
+                startTime: 'asc',
+            },
+            take: 10,
+        });
+
+        // Search Event Guides (EventTypeInfo)
+        const eventGuides = await prisma.eventTypeInfo.findMany({
+            where: {
+                OR: [
+                    { title: { contains: cleanQuery, mode: 'insensitive' } },
+                    { description: { contains: cleanQuery, mode: 'insensitive' } },
+                ]
+            } as any,
+            take: 10,
+        });
+
+        // Search Registered Users
         const registeredUsers = await prisma.user.findMany({
             where: {
                 OR: [
@@ -96,7 +137,7 @@ export async function searchGlobal(query: string): Promise<SearchResults> {
             take: 20,
         });
 
-        // 2. Search Player Statistics (Ghost Players who haven't registered)
+        // Search Player Statistics (Ghost Players who haven't registered)
         const statsPlayers = await prisma.playerStatistic.findMany({
             where: {
                 OR: [
@@ -114,15 +155,20 @@ export async function searchGlobal(query: string): Promise<SearchResults> {
             take: 20,
         });
 
-        // 3. Merge and Unify
+        // Merge and Unify Players
         const playerMap = new Map<string, SearchResults['players'][0]>();
 
         registeredUsers.forEach(u => {
             const key = (u.minecraftUsername || u.name || u.id || "unknown").toLowerCase();
+            let image = u.image;
+            if (u.minecraftUsername) {
+                image = `https://api.mineatar.io/face/${u.minecraftUsername}`;
+            }
+
             playerMap.set(key, {
                 id: u.id,
                 name: u.name,
-                image: u.image,
+                image: image,
                 minecraftUsername: u.minecraftUsername,
             });
         });
@@ -141,11 +187,11 @@ export async function searchGlobal(query: string): Promise<SearchResults> {
         });
 
         const players = Array.from(playerMap.values()).slice(0, 15);
-        console.log(`[Search] Results: updates=${updates.length}, players=${players.length}`);
+        console.log(`[Search] Results: updates=${updates.length}, events=${events.length}, guides=${eventGuides.length}, players=${players.length}`);
 
-        return { updates, players };
+        return { updates, players, events, eventGuides };
     } catch (error) {
         console.error("[Search] Critical Error:", error);
-        return { updates: [], players: [] };
+        return { updates: [], players: [], events: [], eventGuides: [] };
     }
 }

@@ -18,6 +18,8 @@ interface PillowDrawerProps {
     }
     footerDots?: boolean
     onOpenChange?: (isOpen: boolean) => void
+    shadowClassName?: string
+    shadowBottom?: string
 }
 
 export function PillowDrawer({
@@ -26,13 +28,15 @@ export function PillowDrawer({
     className,
     contentClassName,
     colors = {
-        bg: "bg-primary/20",
-        hover: "hover:bg-primary/30",
+        bg: "bg-muted/50",
+        hover: "hover:bg-muted/70",
         text: "text-primary",
         ring: "focus:ring-primary/50"
     },
     footerDots = true,
-    onOpenChange
+    onOpenChange,
+    shadowClassName,
+    shadowBottom
 }: PillowDrawerProps) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
     const [isHovered, setIsHovered] = useState(false)
@@ -199,7 +203,8 @@ export function PillowDrawer({
                 <PillowCard
                     className="h-full w-full cursor-pointer"
                     contentClassName={cn("p-0", contentClassName)}
-                    shadowClassName="hidden"
+                    shadowClassName={shadowClassName}
+                    shadowBottom={shadowBottom}
                     onClick={() => setIsDrawerOpen(!isDrawerOpen)}
                     animateOnMount={true}
                     forceHover={isHovered}

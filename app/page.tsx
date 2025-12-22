@@ -89,7 +89,7 @@ export default async function Home() {
         events={events}
         eventTemplates={templates}
       />
-      <footer className="py-6 border-t bg-background">
+      <footer className="py-6 relative z-10">
         <div className="container flex flex-col items-center justify-center gap-6 px-4 mx-auto">
           <div className="flex gap-4">
             <a href="https://youtube.com" target="_blank" rel="noreferrer" className="bg-[#FF0000] p-2 rounded-xl text-white hover:scale-110 transition-transform flex items-center justify-center w-10 h-10">

@@ -1,12 +1,9 @@
 import "dotenv/config"
 import { PrismaClient } from "@prisma/client"
-// In scripts, we can't easily use @/ alias unless we configure ts-node/tsx. 
-// We'll just use the same initialization logic directly here, but using the correct keys.
-
 const prisma = new PrismaClient({
-    // @ts-ignore - Prisma 7 specific config if needed
+    // @ts-ignore
     accelerateUrl: process.env.DATABASE_URL
-} as any)
+})
 
 console.log("DATABASE_URL present:", !!process.env.DATABASE_URL)
 
