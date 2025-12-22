@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-
 import { motion, useScroll, useTransform, useAnimation } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -13,6 +12,8 @@ import { CommunityGallery } from "@/components/community-gallery"
 import { VotingSection, VoteSite } from "@/components/voting-section"
 import { WhoWeAre } from "@/components/who-we-are"
 import { EventsAtAGlance } from "@/components/events-at-a-glance"
+import { LatestNewsSection } from "@/components/latest-news-section"
+import { DynamicBackground } from "@/components/ui/dynamic-background"
 import Image from "next/image"
 
 import { Event } from "@prisma/client"
@@ -71,7 +72,9 @@ export function LandingPage({ bannerImages, user, communityImages, votingSites, 
     }, [logoControls]);
 
     return (
-        <main className="flex-1">
+        <main className="flex-1 relative">
+            <DynamicBackground />
+
             {/* Payment Modal */}
 
 
@@ -161,9 +164,10 @@ export function LandingPage({ bannerImages, user, communityImages, votingSites, 
             <div className="h-screen w-full relative z-[-1]" />
 
             {/* Content Section - Flows naturally after the spacer */}
-            <div className="relative z-10 bg-background">
+            <div className="relative z-10">
                 <WhoWeAre />
                 <ServerMetrics />
+                <LatestNewsSection />
                 <EventsAtAGlance events={events} eventTemplates={eventTemplates} />
 
                 {/* Community & Voting Layers */}

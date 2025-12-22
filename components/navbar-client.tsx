@@ -4,13 +4,13 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from "framer-motion"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { SideMenu } from "@/components/side-menu"
 import { NavbarAuthButtons } from "@/components/navbar-auth"
 import { UserNav } from "@/components/user-nav"
 import { User } from "next-auth"
 import { useCart } from "@/components/providers/cart-provider"
-import { ShoppingCart, Trophy, BarChart3, Map as MapIcon, CalendarDays } from "lucide-react"
+import { ShoppingCart, Trophy, BarChart3, Map as MapIcon, CalendarDays, Newspaper, Search as SearchIcon } from "lucide-react"
 
 function CartBadge() {
     const { items } = useCart()
@@ -28,6 +28,7 @@ interface NavbarClientProps {
 }
 
 export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
+    const router = useRouter()
     const { scrollY } = useScroll()
     const pathname = usePathname()
     const isHome = pathname === "/"
@@ -113,6 +114,13 @@ export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
                             Shop
                         </Link>
                         <Link
+                            href="/updates"
+                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
+                        >
+                            <Newspaper className="w-4 h-4" />
+                            Updates
+                        </Link>
+                        <Link
                             href="/events"
                             className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
                         >
@@ -128,8 +136,7 @@ export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
                         </Link>
                         {blueMapUrl && (
                             <Link
-                                href={blueMapUrl}
-                                target="_blank"
+                                href="/map"
                                 className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
                             >
                                 <MapIcon className="w-4 h-4" />
@@ -140,6 +147,27 @@ export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    <div className="hidden lg:block relative group">
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.currentTarget);
+                                const query = formData.get('q');
+                                if (query && typeof query === 'string' && query.trim().length > 0) {
+                                    router.push(`/search?q=${encodeURIComponent(query)}`);
+                                }
+                            }}
+                            className="relative"
+                        >
+                            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                            <input
+                                type="text"
+                                name="q"
+                                placeholder="Search everything..."
+                                className="w-48 bg-white/5 border border-white/10 focus:border-primary/50 text-sm rounded-full pl-10 pr-4 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/50"
+                            />
+                        </form>
+                    </div>
                     {sessionUser ? (
                         <UserNav user={sessionUser} />
                     ) : (

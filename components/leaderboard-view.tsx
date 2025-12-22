@@ -15,6 +15,7 @@ export function LeaderboardView({ isAuthenticated = false }: { isAuthenticated?:
     const [isLoading, setIsLoading] = useState(true)
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
     const [isSignInOpen, setIsSignInOpen] = useState(false)
+    const [activeTab, setActiveTab] = useState("Distance")
 
     const handlePlayerClick = (username: string) => {
         if (!isAuthenticated) {
@@ -58,13 +59,13 @@ export function LeaderboardView({ isAuthenticated = false }: { isAuthenticated?:
     const sectionOrder = ["Distance", "Combat", "General"]
 
     return (
-        <div className="space-y-24 pb-20 overflow-x-hidden container mx-auto px-8">
+        <div className="space-y-8 pb-12 container mx-auto px-4 md:px-8 pt-24">
             <div className="text-center space-y-4">
-                <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">Server Leaders</h1>
+                <h1 className="text-4xl font-extrabold font-heading tracking-tight lg:text-5xl">Server Leaders</h1>
                 <p className="text-lg text-muted-foreground">Top players across various categories</p>
             </div>
 
-            <div className="space-y-32">
+            <div className="space-y-8">
                 {/* Aggregate Section (Items) */}
                 {sections.Items.length > 0 && (
                     <AggregateSection
@@ -74,19 +75,49 @@ export function LeaderboardView({ isAuthenticated = false }: { isAuthenticated?:
                     />
                 )}
 
-                {sectionOrder.map((sectionName, idx) => {
-                    const sectionStats = sections[sectionName as keyof typeof sections]
-                    if (sectionStats.length === 0) return null
+                {/* Category Tabs */}
+                <div className="flex justify-center">
+                    <div className="inline-flex items-center p-1 bg-muted/50 rounded-full border border-white/5 backdrop-blur-sm">
+                        {sectionOrder.map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`relative px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${activeTab === tab
+                                    ? "text-white shadow-sm"
+                                    : "text-muted-foreground hover:text-white/80"
+                                    }`}
+                            >
+                                {activeTab === tab && (
+                                    <motion.div
+                                        layoutId="activeTab"
+                                        className="absolute inset-0 bg-indigo-500 rounded-full"
+                                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                    />
+                                )}
+                                <span className="relative z-10">{tab}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
 
-                    return (
-                        <CyclingSection
-                            key={sectionName}
-                            title={sectionName}
-                            stats={sectionStats}
-                            onPlayerClick={handlePlayerClick}
-                        />
-                    )
-                })}
+                {/* Active Category Section */}
+                <div className="pt-6">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeTab}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <CyclingSection
+                                title={activeTab}
+                                stats={sections[activeTab as keyof typeof sections] || []}
+                                onPlayerClick={handlePlayerClick}
+                            />
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
             </div>
 
             <PlayerProfileModal
@@ -104,24 +135,114 @@ export function LeaderboardView({ isAuthenticated = false }: { isAuthenticated?:
 }
 
 function AggregateSection({ title, stats, onPlayerClick }: { title: string, stats: LeaderboardCategory[], onPlayerClick: (username: string) => void }) {
+    // Responsive State
+    const [isMobile, setIsMobile] = useState(false)
+    const [activeIndex, setActiveIndex] = useState(0)
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768)
+        }
+        // Initial check
+        handleResize()
+
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
+
+    // Mobile Auto-Cycling Logic
+    useEffect(() => {
+        if (!isMobile) return
+
+        const interval = setInterval(() => {
+            setActiveIndex((prev) => (prev + 1) % stats.length)
+        }, 5000)
+
+        return () => clearInterval(interval)
+    }, [isMobile, stats.length])
+
+    // Bento Grid Configuration for first 6 items: Total 12 cells (4x3 grid)
+    // Item 0: Big Square (2x2) -> 4 cells
+    // Item 1: Wide (2x1)       -> 2 cells
+    // Item 2: Tall (1x2)       -> 2 cells
+    // Item 3: Small (1x1)      -> 1 cell
+    // Item 4: Wide (2x1)       -> 2 cells
+    // Item 5: Small (1x1)      -> 1 cell
+
+    // Determine grid classes based on index
+    const getGridClass = (index: number) => {
+        const classes = [
+            "md:col-span-2 md:row-span-2", // 0: Big
+            "md:col-span-2 md:row-span-1", // 1: Wide
+            "md:col-span-1 md:row-span-2", // 2: Tall (Asymmetry!)
+            "md:col-span-1 md:row-span-1", // 3: Small
+            "md:col-span-2 md:row-span-1", // 4: Wide
+            "md:col-span-1 md:row-span-1", // 5: Small
+        ]
+        return classes[index] || "col-span-1 row-span-1"
+    }
+
+    // Slice for desktop bento grid, but use full list for mobile carousel
+    const displayStats = isMobile ? stats : stats.slice(0, 6)
+
     return (
-        <div className="relative">
+        <div className="relative pt-8 pb-12">
             <h2 className="text-2xl font-bold mb-8 text-left flex items-center gap-4">
                 {title}
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {stats.map((category, index) => (
-                    <motion.div
-                        key={category.statId}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: index * 0.1 }}
-                    >
-                        <AggregateCard category={category} onPlayerClick={onPlayerClick} />
-                    </motion.div>
-                ))}
-            </div>
+            {/* Mobile View: Single Cycling Card */}
+            {isMobile ? (
+                <div className="relative">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeIndex}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <AggregateCard
+                                category={stats[activeIndex]}
+                                onPlayerClick={onPlayerClick}
+                                className="h-96 w-full"
+                                size="lg"
+                            />
+                        </motion.div>
+                    </AnimatePresence>
+
+                    {/* Pagination Dots */}
+                    <div className="flex gap-2 justify-center mt-6">
+                        {stats.map((_, i) => (
+                            <div
+                                key={i}
+                                className={`h-2 w-2 rounded-full transition-colors duration-300 ${i === activeIndex ? 'bg-indigo-500' : 'bg-indigo-500/20'}`}
+                            />
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                /* Desktop View: Bento Grid */
+                <div className="grid grid-cols-1 md:grid-cols-4 auto-rows-[200px] gap-4">
+                    {displayStats.map((category, index) => (
+                        <motion.div
+                            key={category.statId}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.5, delay: index * 0.1 }}
+                            className={`relative group ${getGridClass(index)}`}
+                        >
+                            <AggregateCard
+                                category={category}
+                                onPlayerClick={onPlayerClick}
+                                className="h-full w-full"
+                                // Pass specific font sizing for larger cards
+                                size={index === 0 ? "lg" : "md"}
+                            />
+                        </motion.div>
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
@@ -129,11 +250,15 @@ function AggregateSection({ title, stats, onPlayerClick }: { title: string, stat
 function AggregateCard({
     category,
     onInteractionChange,
-    onPlayerClick
+    onPlayerClick,
+    className = "",
+    size = "md"
 }: {
     category: LeaderboardCategory,
     onInteractionChange?: (isOpen: boolean) => void,
-    onPlayerClick: (username: string) => void
+    onPlayerClick: (username: string) => void,
+    className?: string,
+    size?: "md" | "lg"
 }) {
     const [searchQuery, setSearchQuery] = useState("")
     const [isHovering, setIsHovering] = useState(false)
@@ -197,17 +322,19 @@ function AggregateCard({
                         }
                     }
             }
-            className="flex aspect-square w-full relative group flex-shrink-0"
+            style={{ zIndex: isOpen || isHovering ? 40 : 1 }}
+            className={`flex flex-col w-full relative group/aggregate flex-shrink-0 rounded-3xl ${className}`}
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
         >
             {/* Ambient Glow behind the card */}
-            <div className="absolute inset-8 bg-indigo-500/30 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            < div className="absolute inset-8 bg-primary/30 blur-2xl rounded-full opacity-0 group-hover/aggregate:opacity-100 transition-opacity duration-700" />
 
             <PillowDrawer
-                className="flex-1"
+                className="flex-1 h-full"
                 colors={color}
                 onOpenChange={handleOpenChange}
+                shadowBottom="-bottom-6"
                 drawerContent={
                     <>
                         <motion.div layout className="relative" onClick={(e) => e.stopPropagation()}>
@@ -261,7 +388,7 @@ function AggregateCard({
                             <img
                                 src={bgImage}
                                 alt={category.displayName}
-                                className="w-full h-full object-cover opacity-90 group-hover:scale-110 transition-transform duration-700"
+                                className={`w-full h-full object-cover opacity-90 transition-transform duration-700 ease-out will-change-transform ${isHovering ? "scale-110" : "scale-100"}`}
                             />
                             {/* Disclaimer - Only visible if we have an image */}
                             <div className="absolute top-2 right-3 z-30 pointer-events-none">
@@ -271,36 +398,30 @@ function AggregateCard({
                             </div>
                         </div>
                     ) : (
-                        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-500/80 via-purple-600/80 to-indigo-900/80 group-hover:scale-110 transition-transform duration-700" />
+                        <div className={`absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-500/80 via-purple-600/80 to-indigo-900/80 transition-transform duration-700 ease-out will-change-transform ${isHovering ? "scale-110" : "scale-100"}`} />
                     )}
 
                     {/* Hover Sheen Effect */}
                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent z-10 -translate-x-[150%] group-hover/card:translate-x-[150%] transition-transform duration-1000 ease-in-out" />
 
                     {/* Gradient Overlay for Text Readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 flex flex-col justify-end text-left z-20">
-                        <p className="text-indigo-100/90 text-[10px] font-bold uppercase tracking-wider mb-1 opacity-90 shadow-sm">
-                            Total {category.displayName.replace("Most ", "").replace("Total ", "").replace("Furthest ", "")}
-                        </p>
-                        <div className="flex items-baseline gap-2">
-                            <h3 className="text-3xl font-black bg-gradient-to-b from-white via-indigo-50 to-indigo-200 bg-clip-text text-transparent drop-shadow-sm tracking-tight">
-                                {serverTotal.toLocaleString()}
-                            </h3>
-                            <p className="text-white/60 text-[10px] font-medium uppercase tracking-widest opacity-80">
-                                {category.unit}
-                            </p>
-                        </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 flex flex-col justify-end items-center text-center z-20">
+                        <h3 className={`font-black text-white drop-shadow-sm tracking-tight leading-tight ${size === 'lg' ? 'text-4xl' : 'text-2xl'}`}>
+                            {serverTotal.toLocaleString()} {category.displayName.replace("Most ", "").replace("Total ", "").replace("Furthest ", "")}
+                        </h3>
                     </div>
                 </div>
             </PillowDrawer>
-        </motion.div>
+        </motion.div >
     )
 }
 
 function CyclingSection({ title, stats, onPlayerClick }: { title: string, stats: LeaderboardCategory[], onPlayerClick: (username: string) => void }) {
+    // Return to Original Cycling Logic
     const [cardsPerPage, setCardsPerPage] = useState(3)
     const [pageIndex, setPageIndex] = useState(0)
     const [paused, setPaused] = useState(false)
+    const [lastInteraction, setLastInteraction] = useState(0)
 
     useEffect(() => {
         const handleResize = () => {
@@ -316,11 +437,13 @@ function CyclingSection({ title, stats, onPlayerClick }: { title: string, stats:
     const totalPages = Math.ceil(stats.length / cardsPerPage)
 
     const handleInteractionChange = useCallback((isOpen: boolean) => {
-        setPaused((prev) => {
-            if (isOpen) return true
-            return isOpen
-        })
+        setPaused(isOpen)
     }, [])
+
+    useEffect(() => {
+        // Reset page index if active tab changes or stats length changes significantly
+        setPageIndex(0)
+    }, [stats.length])
 
     useEffect(() => {
         if (totalPages <= 1 || paused) return
@@ -330,7 +453,8 @@ function CyclingSection({ title, stats, onPlayerClick }: { title: string, stats:
         }, 8000)
 
         return () => clearInterval(interval)
-    }, [totalPages, paused])
+        return () => clearInterval(interval)
+    }, [totalPages, paused, lastInteraction])
 
     const currentStats = stats.slice(
         pageIndex * cardsPerPage,
@@ -338,37 +462,30 @@ function CyclingSection({ title, stats, onPlayerClick }: { title: string, stats:
     )
 
     return (
-        <div className="relative">
-            <h2 className="text-2xl font-bold mb-8 text-left flex items-center gap-4">
+        <div className="relative group/section bg-muted/5 rounded-3xl p-6 md:p-8 border border-white/5">
+            <h2 className="text-2xl font-bold mb-6 text-left flex items-center gap-4 px-1 sr-only">
                 {title}
-                {totalPages > 1 && (
-                    <div className="flex gap-2">
-                        {Array.from({ length: totalPages }).map((_, i) => (
-                            <div
-                                key={i}
-                                className={`h-2 w-2 rounded-full transition-colors duration-300 ${i === pageIndex ? 'bg-primary' : 'bg-primary/20'}`}
-                            />
-                        ))}
-                    </div>
-                )}
             </h2>
 
-            <div className={`grid gap-8 min-h-[14rem] ${cardsPerPage === 1 ? 'grid-cols-1' :
-                cardsPerPage === 2 ? 'grid-cols-2' :
-                    'grid-cols-3'
-                }`}>
-                <AnimatePresence mode="wait" initial={true}>
+            <motion.div
+                layout
+                className={`grid gap-6 ${cardsPerPage === 1 ? 'grid-cols-1' :
+                    cardsPerPage === 2 ? 'grid-cols-2' :
+                        'grid-cols-3'
+                    }`}>
+                <AnimatePresence mode="wait" initial={false}>
                     {currentStats.map((category, index) => {
+                        // Unique key ensuring unmount/remount for animation
                         const uniqueKey = `${category.statId}-${pageIndex}`
 
                         return (
                             <motion.div
+                                layout
                                 key={uniqueKey}
-                                exit={{ opacity: 0, scale: 0.8, y: -20 }}
-                                transition={{
-                                    duration: 0.5,
-                                    ease: "backOut"
-                                }}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.4 }}
                                 className="relative"
                             >
                                 <LeaderboardCard
@@ -376,7 +493,6 @@ function CyclingSection({ title, stats, onPlayerClick }: { title: string, stats:
                                     index={stats.indexOf(category)}
                                     positionIndex={index}
                                     isLastItem={index === currentStats.length - 1}
-                                    // Pass a dummy ref since we aren't using the intersection observer anymore for entrance
                                     root={{ current: null } as any}
                                     onInteractionChange={handleInteractionChange}
                                     onPlayerClick={onPlayerClick}
@@ -385,7 +501,22 @@ function CyclingSection({ title, stats, onPlayerClick }: { title: string, stats:
                         )
                     })}
                 </AnimatePresence>
-            </div>
+            </motion.div>
+
+            {totalPages > 1 && (
+                <div className="flex gap-2 justify-center mt-8">
+                    {Array.from({ length: totalPages }).map((_, i) => (
+                        <div
+                            key={i}
+                            onClick={() => {
+                                setPageIndex(i)
+                                setLastInteraction(Date.now())
+                            }}
+                            className={`h-2 w-2 rounded-full transition-colors duration-300 cursor-pointer ${i === pageIndex ? 'bg-indigo-500' : 'bg-indigo-500/20 hover:bg-indigo-500/40'}`}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
@@ -416,11 +547,24 @@ function LeaderboardCard({
     const [zIndex, setZIndex] = useState(1)
     const [searchQuery, setSearchQuery] = useState("")
     const drawerRef = useRef<HTMLDivElement>(null)
+    const cardRef = useRef<HTMLDivElement>(null) // Ref for scrolling
 
-    // Notify parent of interaction state changes
-    useEffect(() => {
-        onInteractionChange?.(isDrawerOpen)
-    }, [isDrawerOpen, onInteractionChange])
+    // Handle drawer toggle with scrolling and state update
+    const handleOpenChange = (open: boolean) => {
+        setIsDrawerOpen(open)
+        onInteractionChange?.(open)
+
+        if (open) {
+            // Smooth scroll to card after small delay for layout expansion
+            setTimeout(() => {
+                cardRef.current?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest',
+                    inline: 'center'
+                })
+            }, 300)
+        }
+    }
 
     // Determine facing direction for head
     // We want: 
@@ -463,9 +607,9 @@ function LeaderboardCard({
 
     useEffect(() => {
         if (isDrawerOpen) {
-            setZIndex(50)
+            setZIndex(40)
         } else {
-            setZIndex(prev => prev === 50 ? 20 : prev)
+            setZIndex(prev => prev === 40 ? 20 : prev)
         }
     }, [isDrawerOpen])
 
@@ -474,16 +618,8 @@ function LeaderboardCard({
         p.username.toLowerCase().includes(searchQuery.toLowerCase())
     ).slice(0, 20)
 
-    const wobbleKeyframes = {
-        scaleX: [1, 1.08, 0.95, 1.02, 0.99, 1],
-        scaleY: [1, 0.92, 1.05, 0.98, 1.01, 1],
-        x: [0, -2, 2, -1, 1, 0],
-    };
-
     const [showModel, setShowModel] = useState(false)
     const [isSkinLoaded, setIsSkinLoaded] = useState(false)
-    const [modelWobble, setModelWobble] = useState(false)
-    const [isWobbling, setIsWobbling] = useState(false)
 
     // Delay model rendering to allow entrance animation to play smoothly first
     useEffect(() => {
@@ -491,67 +627,33 @@ function LeaderboardCard({
         return () => clearTimeout(timer)
     }, [])
 
-    // Trigger wobble when drawer closes
-    const prevIsOpen = useRef(isDrawerOpen)
-    useEffect(() => {
-        if (prevIsOpen.current && !isDrawerOpen) {
-            setIsWobbling(true)
-            const timer = setTimeout(() => setIsWobbling(false), 800)
-            return () => clearTimeout(timer)
-        }
-        prevIsOpen.current = isDrawerOpen
-    }, [isDrawerOpen])
 
 
     return (
         <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={{
-                hidden: { scaleX: 0.5, scaleY: 0.5, opacity: 0 },
-                visible: {
-                    scaleX: 1,
-                    scaleY: 1,
-                    opacity: 1,
-                    transition: {
-                        scaleX: { duration: 0.3, ease: "easeOut" },
-                        scaleY: { duration: 0.3, ease: "easeOut" },
-                        opacity: { duration: 0.2, ease: "easeOut" }
-                    }
-                }
-            }}
-            className="flex h-48 w-full relative group flex-shrink-0"
-            style={{ zIndex: 1, willChange: "transform, opacity" }}
+            layout
+            ref={cardRef} // Attach ref for scrolling
+            className={`flex h-48 w-full relative group flex-shrink-0 transition-all duration-500 ease-in-out scroll-m-24 ${isDrawerOpen ? "mb-16" : "mb-0"}`}
+            style={{ zIndex: zIndex, willChange: "transform, opacity" }}
         >
             <div
                 className="absolute left-0 top-0 bottom-0 w-40 flex items-center justify-center z-0 cursor-pointer"
+                onClick={() => handleOpenChange(!isDrawerOpen)} // Click avatar to toggle
             >
                 <div className="absolute w-[150%] h-[150%] flex items-center justify-center -translate-x-2 -translate-y-8">
                     {showModel && (
                         <motion.div
                             initial="hidden"
-                            animate={isSkinLoaded ? (modelWobble ? "wobble" : "visible") : "hidden"}
+                            animate={isSkinLoaded ? "visible" : "hidden"}
                             variants={{
                                 hidden: { opacity: 0, scale: 0.6 },
                                 visible: {
                                     opacity: 1,
                                     scale: 1,
-                                    transition: { duration: 0.2, ease: "easeOut" }
-                                },
-                                wobble: {
-                                    opacity: 1,
-                                    scale: 1,
-                                    ...{
-                                        scaleX: [1, 1.08, 0.95, 1.02, 0.99, 1],
-                                        scaleY: [1, 0.92, 1.05, 0.98, 1.01, 1],
-                                        x: [0, -2, 2, -1, 1, 0],
-                                    },
-                                    transition: { duration: 0.6, ease: "easeInOut" }
-                                }
-                            }}
-                            onAnimationComplete={(definition) => {
-                                if (definition === "visible") {
-                                    setModelWobble(true)
+                                    transition: {
+                                        scale: { type: "spring", stiffness: 400, damping: 14 },
+                                        opacity: { duration: 0.2 }
+                                    }
                                 }
                             }}
                             className="w-full h-full"
@@ -575,7 +677,7 @@ function LeaderboardCard({
             <PillowDrawer
                 className="flex-1 ml-20"
                 colors={color}
-                onOpenChange={onInteractionChange}
+                onOpenChange={handleOpenChange}
                 drawerContent={
                     <>
                         <motion.div layout className="relative" onClick={(e) => e.stopPropagation()}>

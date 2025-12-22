@@ -10,7 +10,7 @@ interface SkinViewerProps {
     width?: number
     height?: number
     autoRotate?: boolean
-    animation?: 'walk' | 'run' | 'idle' | 'fly' | 'wave' | 'crouch' | 'hit'
+    animation?: 'walk' | 'run' | 'idle' | 'fly' | 'wave' | 'crouch' | 'hit' | 'idle'
     rotation?: number // in degrees
     rotationX?: number // in degrees
     rotationZ?: number // in degrees
@@ -165,6 +165,7 @@ export function SkinViewer({
         } else if (animation === 'hit') {
             viewer.animation = new skinview3d.HitAnimation()
         } else {
+            // Includes 'none' and null/undefined
             viewer.animation = null
         }
     }, [viewer, animation])

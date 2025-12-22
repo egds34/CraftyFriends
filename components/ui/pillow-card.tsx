@@ -18,6 +18,10 @@ interface PillowCardProps extends React.HTMLAttributes<HTMLDivElement> {
     shadowRight?: string;
     /** If true, triggers the enter animation immediately on mount instead of waiting for viewport */
     animateOnMount?: boolean;
+    /** If true, forces the card into its hover state */
+    forceHover?: boolean;
+    /** If true, disables the hover effect */
+    noHover?: boolean;
 }
 
 export function PillowCard({
@@ -31,10 +35,13 @@ export function PillowCard({
     shadowRight = "right-[2px]",
     noHover = false,
     animateOnMount = false,
+    forceHover = false,
     ...props
-}: PillowCardProps & { noHover?: boolean }) {
+}: PillowCardProps) {
     const [animationState, setAnimationState] = useState<'idle' | 'enter' | 'rest'>('idle');
-    const [isHovered, setIsHovered] = useState(false);
+    const [internalHover, setInternalHover] = useState(false);
+
+    const isHovered = internalHover || forceHover;
 
     const wobbleKeyframes = {
         scaleX: [1, 1.08, 0.95, 1.02, 0.99, 1],
@@ -61,8 +68,8 @@ export function PillowCard({
     return (
         <motion.div
             className={cn("relative z-0 bg-transparent", className)}
-            onHoverStart={() => !noHover && setIsHovered(true)}
-            onHoverEnd={() => !noHover && setIsHovered(false)}
+            onHoverStart={() => !noHover && setInternalHover(true)}
+            onHoverEnd={() => !noHover && setInternalHover(false)}
             onViewportEnter={() => {
                 if (animationState === 'idle') setAnimationState('enter');
             }}

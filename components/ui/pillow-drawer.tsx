@@ -18,6 +18,8 @@ interface PillowDrawerProps {
     }
     footerDots?: boolean
     onOpenChange?: (isOpen: boolean) => void
+    shadowClassName?: string
+    shadowBottom?: string
 }
 
 export function PillowDrawer({
@@ -26,13 +28,15 @@ export function PillowDrawer({
     className,
     contentClassName,
     colors = {
-        bg: "bg-primary/20",
-        hover: "hover:bg-primary/30",
+        bg: "bg-muted/50",
+        hover: "hover:bg-muted/70",
         text: "text-primary",
         ring: "focus:ring-primary/50"
     },
     footerDots = true,
-    onOpenChange
+    onOpenChange,
+    shadowClassName,
+    shadowBottom
 }: PillowDrawerProps) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
     const [isHovered, setIsHovered] = useState(false)
@@ -99,6 +103,16 @@ export function PillowDrawer({
         prevIsOpen.current = isDrawerOpen
     }, [isDrawerOpen])
 
+    // Trigger wobble on mount
+    useEffect(() => {
+        const timer1 = setTimeout(() => setIsWobbling(true), 200)
+        const timer2 = setTimeout(() => setIsWobbling(false), 1000)
+        return () => {
+            clearTimeout(timer1)
+            clearTimeout(timer2)
+        }
+    }, [])
+
     const wobbleKeyframes = {
         scaleX: [1, 1.08, 0.95, 1.02, 0.99, 1],
         scaleY: [1, 0.92, 1.05, 0.98, 1.01, 1],
@@ -123,8 +137,10 @@ export function PillowDrawer({
                 onClick={() => setIsDrawerOpen(!isDrawerOpen)}
                 layout
                 onAnimationComplete={() => !isDrawerOpen && setZIndex(1)}
-                initial={false}
+                initial={{ scale: 0, opacity: 0 }}
+                exit={{ scale: 0, opacity: 0, transition: { duration: 0.2, ease: "easeIn" } }}
                 animate={{
+                    opacity: 1,
                     height: isDrawerOpen ? "auto" : "calc(100% - 3.75rem)",
                     scale: (isHovered && !isDrawerOpen) ? 1.03 : 1,
                     ...(isWobbling && !isDrawerOpen ? wobbleKeyframes : {})
@@ -187,9 +203,11 @@ export function PillowDrawer({
                 <PillowCard
                     className="h-full w-full cursor-pointer"
                     contentClassName={cn("p-0", contentClassName)}
-                    shadowClassName="hidden"
+                    shadowClassName={shadowClassName}
+                    shadowBottom={shadowBottom}
                     onClick={() => setIsDrawerOpen(!isDrawerOpen)}
                     animateOnMount={true}
+                    forceHover={isHovered}
                 >
                     {children}
                 </PillowCard>

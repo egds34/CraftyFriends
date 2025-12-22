@@ -5,6 +5,7 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 
 const prismaClientSingleton = () => {
     return new PrismaClient({
+        // @ts-ignore - Required for Prisma 7 with Accelerate URLs
         accelerateUrl: process.env.DATABASE_URL
     })
 }
