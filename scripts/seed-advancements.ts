@@ -1,6 +1,6 @@
 import "dotenv/config"
 import { PrismaClient } from "@prisma/client"
-import { ADVANCEMENTS_DATA } from "../lib/advancements-data"
+import { ADVANCEMENTS_DATA } from "../src/lib/advancements-data"
 const prisma = new PrismaClient({
     // @ts-ignore
     accelerateUrl: process.env.DATABASE_URL

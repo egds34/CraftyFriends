@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import https from 'https';
-import { ADVANCEMENTS_DATA } from '../lib/advancements-data';
+import { ADVANCEMENTS_DATA } from '../src/lib/advancements-data';
 
 const DEST_DIR = '/home/christy/.gemini/antigravity/scratch/CraftyFriends/public/images/advancements/items';
 
