@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { SignInModal } from "@/components/sign-in-modal"
+import { JellyButton } from "@/components/ui/jelly-button"
 import { User } from "next-auth"
 
 interface GetStartedButtonProps {
@@ -16,18 +16,18 @@ export function GetStartedButton({ user }: GetStartedButtonProps) {
     if (user) {
         return (
             <Link href="/account">
-                <Button size="lg" variant="premium">
+                <JellyButton size="lg">
                     Get Started
-                </Button>
+                </JellyButton>
             </Link>
         )
     }
 
     return (
         <>
-            <Button size="lg" variant="premium" onClick={() => setIsSignInOpen(true)}>
+            <JellyButton size="lg" onClick={() => setIsSignInOpen(true)}>
                 Get Started
-            </Button>
+            </JellyButton>
 
             <SignInModal
                 isOpen={isSignInOpen}

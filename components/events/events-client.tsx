@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { PillowCard, PillowButton } from "@/components/ui/pillow-card"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { JellyTabs } from "@/components/ui/jelly-tabs"
 
 interface EventsClientProps {
     initialEvents: Event[]
@@ -117,20 +118,15 @@ export function EventsClient({ initialEvents, eventTemplates, userRole }: Events
             {/* Header / Controls */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-card/50 p-6 rounded-xl border border-border shadow-sm">
                 <div className="flex items-center gap-4">
-                    <div className="flex bg-muted/50 rounded-lg p-1">
-                        {(['daily', 'weekly', 'monthly'] as const).map(mode => (
-                            <button
-                                key={mode}
-                                onClick={() => setViewMode(mode)}
-                                className={cn(
-                                    "px-4 py-2 rounded-md text-sm font-medium transition-all capitalize",
-                                    viewMode === mode ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
-                                )}
-                            >
-                                {mode}
-                            </button>
-                        ))}
-                    </div>
+                    <JellyTabs
+                        tabs={[
+                            { id: 'daily', label: 'Daily' },
+                            { id: 'weekly', label: 'Weekly' },
+                            { id: 'monthly', label: 'Monthly' }
+                        ]}
+                        activeTab={viewMode}
+                        onTabChange={(id) => setViewMode(id as ViewMode)}
+                    />
                     <div className="h-8 w-px bg-border mx-2 hidden md:block" />
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="icon" onClick={prevPeriod}><ChevronLeft className="w-4 h-4" /></Button>

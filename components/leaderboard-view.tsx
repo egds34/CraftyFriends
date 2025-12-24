@@ -10,6 +10,7 @@ import { PillowDrawer } from "@/components/ui/pillow-drawer"
 import { PlayerProfileModal } from "@/components/player-profile-modal"
 import { SignInModal } from "@/components/sign-in-modal"
 import { cn } from "@/lib/utils"
+import { JellyTabs } from "@/components/ui/jelly-tabs"
 
 export function LeaderboardView({
     isAuthenticated = false,
@@ -82,7 +83,7 @@ export function LeaderboardView({
                 {/* Aggregate Section (Items) */}
                 {sections.Items.length > 0 && (
                     <AggregateSection
-                        title="Server Totals"
+                        title=""
                         stats={sections.Items}
                         onPlayerClick={handlePlayerClick}
                     />
@@ -90,27 +91,11 @@ export function LeaderboardView({
 
                 {/* Category Tabs */}
                 <div className="flex justify-center">
-                    <div className="inline-flex items-center p-1 bg-muted/50 rounded-full border border-white/5 backdrop-blur-sm">
-                        {sectionOrder.map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`relative px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${activeTab === tab
-                                    ? "text-white shadow-sm"
-                                    : "text-muted-foreground hover:text-white/80"
-                                    }`}
-                            >
-                                {activeTab === tab && (
-                                    <motion.div
-                                        layoutId="activeTab"
-                                        className="absolute inset-0 bg-indigo-500 rounded-full"
-                                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                                    />
-                                )}
-                                <span className="relative z-10">{tab}</span>
-                            </button>
-                        ))}
-                    </div>
+                    <JellyTabs
+                        tabs={sectionOrder.map(name => ({ id: name, label: name }))}
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                    />
                 </div>
 
                 {/* Active Category Section */}
@@ -412,7 +397,7 @@ function AggregateCard({
                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent z-10 -translate-x-[150%] group-hover/card:translate-x-[150%] transition-transform duration-1000 ease-in-out" />
 
                     {/* Gradient Overlay for Text Readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-6 flex flex-col justify-center items-center text-center z-20">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-6 flex flex-col justify-end items-start text-left z-20">
                         <h3 className={`font-black text-white drop-shadow-xl tracking-tight leading-tight ${size === 'lg' ? 'text-4xl' : 'text-2xl'}`}>
                             {serverTotal.toLocaleString()}
                         </h3>

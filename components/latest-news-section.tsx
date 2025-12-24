@@ -35,7 +35,7 @@ export function LatestNewsSection() {
                     </Link>
                 </div>
 
-                <UpdatesGrid initialUpdates={latestUpdates} />
+                <UpdatesGrid initialUpdates={latestUpdates} showSearch={false} />
             </div>
         </section>
     );

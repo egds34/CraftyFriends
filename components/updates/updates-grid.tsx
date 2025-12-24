@@ -11,14 +11,18 @@ import { useState } from "react";
 import { getUpdates } from "@/app/actions/updates";
 import { Button } from "@/components/ui/button";
 import { InteractiveHoverBar } from "@/components/ui/interactive-hover-bar";
+import { JellyDots } from "@/components/ui/jelly-dots";
+
+// ... imports
 
 interface UpdatesGridProps {
     initialUpdates: ServerUpdate[]; // Renamed for clarity
     canCreate?: boolean;
     initialHasMore?: boolean;
+    showSearch?: boolean;
 }
 
-export function UpdatesGrid({ initialUpdates, canCreate }: UpdatesGridProps) {
+export function UpdatesGrid({ initialUpdates, canCreate, showSearch = true }: UpdatesGridProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [mobileVisibleCount, setMobileVisibleCount] = useState(5);
 
@@ -29,11 +33,11 @@ export function UpdatesGrid({ initialUpdates, canCreate }: UpdatesGridProps) {
         update.category.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Desktop: Split into Featured and Paginated
-    const featuredUpdates = filteredUpdates.slice(0, 3);
-    const remainingUpdates = filteredUpdates.slice(3);
+    // Desktop: Split into Featured and Paginated (Only if NOT SEARCHING)
+    const featuredUpdates = !searchQuery ? filteredUpdates.slice(0, 3) : [];
+    const remainingUpdates = !searchQuery ? filteredUpdates.slice(3) : [];
 
-    // Desktop Pagination State
+    // Desktop Pagination State (Only used for non-search mode)
     const [currentPage, setCurrentPage] = useState(0);
     const PAGE_SIZE = 4;
     const totalPages = Math.ceil(remainingUpdates.length / PAGE_SIZE);
@@ -43,44 +47,34 @@ export function UpdatesGrid({ initialUpdates, canCreate }: UpdatesGridProps) {
         (currentPage + 1) * PAGE_SIZE
     );
 
-    // Mobile: Infinite Scroll Helpers
+    // ... (rest of helper functions same as before)
+
+    // Helper functions (loadMoreMobile, getPaginatedSpan) remain same
     const loadMoreMobile = () => {
         if (mobileVisibleCount < filteredUpdates.length) {
             setMobileVisibleCount(prev => Math.min(prev + 5, filteredUpdates.length));
         }
     };
 
-    // Determine span classes for paginated items based on page pattern
     const getPaginatedSpan = (indexInPage: number, page: number, count: number) => {
-        // If we don't have a full page (e.g. last page), default to uniform layout
         if (count < 4) return "md:col-span-1 lg:col-span-2";
-
         const pattern = page % 3;
-
-        // Pattern 0: Staggered (Small-Wide / Wide-Small)
-        // [ S ] [   Wide   ]
-        // [   Wide   ] [ S ]
         if (pattern === 0) {
             if (indexInPage === 0) return "md:col-span-1 lg:col-span-1";
             if (indexInPage === 1) return "md:col-span-1 lg:col-span-3";
             if (indexInPage === 2) return "md:col-span-1 lg:col-span-3";
             return "md:col-span-1 lg:col-span-1";
         }
-
-        // Pattern 1: Hero Left
         if (pattern === 1) {
             if (indexInPage === 0) return "md:col-span-1 lg:col-span-2 lg:row-span-2";
             if (indexInPage === 1) return "md:col-span-1 lg:col-span-2";
             return "md:col-span-1 lg:col-span-1";
         }
-
-        // Pattern 2: Hero Right
         if (pattern === 2) {
             if (indexInPage === 1) return "md:col-span-1 lg:col-span-2 lg:row-span-2";
             if (indexInPage === 0) return "md:col-span-1 lg:col-span-2";
             return "md:col-span-1 lg:col-span-1";
         }
-
         return "md:col-span-1 lg:col-span-2";
     };
 
@@ -88,25 +82,27 @@ export function UpdatesGrid({ initialUpdates, canCreate }: UpdatesGridProps) {
         <div className="space-y-12">
 
             {/* Search Bar */}
-            <div className="max-w-md mx-auto relative mb-12">
-                <div className="relative">
-                    <input
-                        type="text"
-                        placeholder="Search articles & guides..."
-                        value={searchQuery}
-                        onChange={(e) => {
-                            setSearchQuery(e.target.value);
-                            setCurrentPage(0); // Reset pagination on search
-                            setMobileVisibleCount(5); // Reset mobile scroll
-                        }}
-                        className="w-full bg-muted/20 border border-border/50 rounded-full px-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium placeholder:text-muted-foreground/50"
-                    />
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                        <Loader2 className={cn("w-4 h-4 animate-spin", !searchQuery && "hidden")} />
-                        {!searchQuery && <div className="w-4 h-4 bg-primary/20 rounded-full" />} {/* Simulating search icon via abstraction or just import */}
+            {showSearch && (
+                <div className="max-w-md mx-auto relative mb-12">
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Search articles & guides..."
+                            value={searchQuery}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setCurrentPage(0); // Reset pagination on search
+                                setMobileVisibleCount(5); // Reset mobile scroll
+                            }}
+                            className="w-full bg-muted/40 dark:bg-muted/60 border-2 border-border dark:border-border/80 rounded-full px-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium placeholder:text-muted-foreground"
+                        />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                            <Loader2 className={cn("w-4 h-4 animate-spin", !searchQuery && "hidden")} />
+                            {!searchQuery && <div className="w-4 h-4 bg-primary/20 rounded-full" />}
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {filteredUpdates.length === 0 && (
                 <div className="text-center py-20 text-muted-foreground">
@@ -114,112 +110,132 @@ export function UpdatesGrid({ initialUpdates, canCreate }: UpdatesGridProps) {
                 </div>
             )}
 
-            {/* DESKTOP VIEW (Hidden on Mobile) */}
+            {/* DESKTOP VIEW */}
             <div className="hidden md:block space-y-24">
-                {/* 1. Featured Section (Top 3) */}
-                {featuredUpdates.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 auto-rows-[340px]">
-                        {featuredUpdates.map((update, idx) => {
-                            let span = "";
-                            if (idx === 0) span = "lg:col-span-2 lg:row-span-2";
-                            else span = "lg:col-span-1 lg:row-span-1";
 
-                            return (
+                {/* SEARCH RESULTS MODE: Simple 4 Column Grid */}
+                {searchQuery && filteredUpdates.length > 0 && (
+                    <div className="space-y-8">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 auto-rows-[300px]"
+                        >
+                            {filteredUpdates.map((update, idx) => (
                                 <UpdateCard
                                     key={update.id}
                                     update={update}
                                     idx={idx}
-                                    spanClasses={span}
-                                    isFeatured={true}
+                                    spanClasses="col-span-1 row-span-1"
                                 />
-                            );
-                        })}
+                            ))}
+                        </motion.div>
                     </div>
                 )}
 
-                {/* 2. Divider */}
-                {remainingUpdates.length > 0 && (
-                    <div className="relative flex items-center justify-center">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-border/50"></div>
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase bg-background px-4 text-muted-foreground font-bold tracking-widest">
-                            <span>Recent Updates</span>
-                        </div>
-                    </div>
-                )}
+                {/* NORMAL MODE: Featured + Bento */}
+                {!searchQuery && (
+                    <>
+                        {/* 1. Featured Section (Top 3) */}
+                        {featuredUpdates.length > 0 && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 auto-rows-[340px]">
+                                {featuredUpdates.map((update, idx) => {
+                                    let span = "";
+                                    if (idx === 0) span = "lg:col-span-2 lg:row-span-2";
+                                    else span = "lg:col-span-1 lg:row-span-1";
 
-                {/* 3. Paginated Bento Grid */}
-                {remainingUpdates.length > 0 && (
-                    <div className="space-y-8">
-                        <AnimatePresence mode="popLayout">
-                            <motion.div
-                                key={currentPage}
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                transition={{ duration: 0.2, ease: "easeInOut" }}
-                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 auto-rows-[300px]"
-                            >
-                                {Array.from({ length: 4 }).map((_, idx) => {
-                                    const update = currentPaginatedUpdates[idx];
-                                    const spanClass = getPaginatedSpan(idx, currentPage, currentPaginatedUpdates.length);
-
-                                    if (update) {
-                                        return (
-                                            <UpdateCard
-                                                key={update.id}
-                                                update={update}
-                                                idx={idx}
-                                                spanClasses={spanClass}
-                                            />
-                                        );
-                                    } else {
-                                        return (
-                                            <div key={`placeholder-${idx}`} className={cn("invisible", spanClass)} aria-hidden="true" />
-                                        );
-                                    }
-                                })}
-                            </motion.div>
-                        </AnimatePresence>
-
-                        {/* Pagination Controls */}
-                        {totalPages > 1 && (
-                            <div className="flex justify-center items-center gap-6 pt-8">
-                                <Button
-                                    variant="outline"
-                                    size="lg"
-                                    className="w-32 rounded-full border-border/50"
-                                    onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-                                    disabled={currentPage === 0}
-                                >
-                                    Previous
-                                </Button>
-
-                                <div className="flex gap-2">
-                                    {Array.from({ length: totalPages }).map((_, i) => (
-                                        <div
-                                            key={i}
-                                            className={cn(
-                                                "w-2 h-2 rounded-full transition-all duration-300",
-                                                i === currentPage ? "bg-primary w-6" : "bg-primary/20"
-                                            )}
+                                    return (
+                                        <UpdateCard
+                                            key={update.id}
+                                            update={update}
+                                            idx={idx}
+                                            spanClasses={span}
+                                            isFeatured={true}
                                         />
-                                    ))}
-                                </div>
-
-                                <Button
-                                    variant="outline"
-                                    size="lg"
-                                    className="w-32 rounded-full border-border/50"
-                                    onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
-                                    disabled={currentPage === totalPages - 1}
-                                >
-                                    Next
-                                </Button>
+                                    );
+                                })}
                             </div>
                         )}
-                    </div>
+
+                        {/* 2. Divider */}
+                        {remainingUpdates.length > 0 && (
+                            <div className="relative flex items-center justify-center">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-border/50"></div>
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase bg-background px-4 text-muted-foreground font-bold tracking-widest">
+                                    <span>Recent Updates</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 3. Paginated Bento Grid */}
+                        {remainingUpdates.length > 0 && (
+                            <div className="space-y-8">
+                                <AnimatePresence mode="wait">
+                                    <motion.div
+                                        key={currentPage}
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 auto-rows-[300px]"
+                                    >
+                                        {Array.from({ length: 4 }).map((_, idx) => {
+                                            const update = currentPaginatedUpdates[idx];
+                                            const spanClass = getPaginatedSpan(idx, currentPage, currentPaginatedUpdates.length);
+
+                                            if (update) {
+                                                return (
+                                                    <UpdateCard
+                                                        key={update.id}
+                                                        update={update}
+                                                        idx={idx}
+                                                        spanClasses={spanClass}
+                                                    />
+                                                );
+                                            } else {
+                                                return (
+                                                    <div key={`placeholder-${idx}`} className={cn("invisible", spanClass)} aria-hidden="true" />
+                                                );
+                                            }
+                                        })}
+                                    </motion.div>
+                                </AnimatePresence>
+
+                                {/* Pagination Controls */}
+                                {totalPages > 1 && (
+                                    <div className="flex justify-center items-center gap-6 pt-8">
+                                        <Button
+                                            variant="outline"
+                                            size="lg"
+                                            className="w-32 rounded-full border-border/50"
+                                            onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                                            disabled={currentPage === 0}
+                                        >
+                                            Previous
+                                        </Button>
+
+                                        <JellyDots
+                                            total={totalPages}
+                                            active={currentPage}
+                                            onDotClick={(i) => setCurrentPage(i)}
+                                        />
+
+                                        <Button
+                                            variant="outline"
+                                            size="lg"
+                                            className="w-32 rounded-full border-border/50"
+                                            onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                                            disabled={currentPage === totalPages - 1}
+                                        >
+                                            Next
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
@@ -301,19 +317,21 @@ function getCategoryStyles(category: string) {
 // Helper to render a single card
 function UpdateCard({ update, idx, spanClasses, isFeatured = false }: { update: ServerUpdate, idx: number, spanClasses: string, isFeatured?: boolean }) {
     const styles = getCategoryStyles(update.category);
+    const [isHovering, setIsHovering] = useState(false);
+
     return (
         <motion.div
             key={update.id}
             initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.2 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{
                 type: "spring",
                 stiffness: 100,
                 damping: 15,
-                delay: 0 // Remove delay to be safe
             }}
             className={cn("group relative", spanClasses)}
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
         >
             <PillowCard
                 className="w-full h-full cursor-pointer"
@@ -325,7 +343,7 @@ function UpdateCard({ update, idx, spanClasses, isFeatured = false }: { update: 
                     <div className="absolute inset-0 z-0">
                         <motion.div
                             className="w-full h-full relative"
-                            whileHover={{ scale: 1.1 }}
+                            animate={{ scale: isHovering ? 1.1 : 1 }}
                             transition={{ duration: 0.8, ease: [0.33, 1, 0.68, 1] }} // Smooth easeOutExpo
                         >
                             <Image

@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Heart, HeartCrack } from "lucide-react";
 import Pusher from "pusher-js";
-import { PillowCard } from "@/components/ui/pillow-card";
+import { PillowCard } from "@/components/ui/pillow-card"
+import { JellyTabs } from "@/components/ui/jelly-tabs";
 import { UptimeCounter } from "@/components/uptime-counter";
 
 
@@ -370,22 +371,15 @@ export function ServerMetrics() {
                         Server Vitals
                     </h2>
 
-                    <div className="inline-flex bg-white/50 dark:bg-black/20 p-1.5 rounded-full backdrop-blur-md border border-white/20 shadow-sm">
-                        {(['1m', '1h', '24h'] as const).map((range) => (
-                            <button
-                                key={range}
-                                onClick={() => setTimeRange(range)}
-                                className={`
-                                    px-6 py-2 text-sm font-bold transition-all duration-300 rounded-2xl mx-1
-                                    ${timeRange === range
-                                        ? 'bg-primary text-white shadow-md transform scale-105'
-                                        : 'bg-transparent text-muted-foreground hover:text-primary hover:bg-primary/10'}
-                                `}
-                            >
-                                {range}
-                            </button>
-                        ))}
-                    </div>
+                    <JellyTabs
+                        tabs={[
+                            { id: '1m', label: '1m' },
+                            { id: '1h', label: '1h' },
+                            { id: '24h', label: '24h' }
+                        ]}
+                        activeTab={timeRange}
+                        onTabChange={(id) => setTimeRange(id as '1m' | '1h' | '24h')}
+                    />
                 </motion.div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-[95%] mx-auto auto-rows-[minmax(200px,auto)]">
@@ -401,8 +395,8 @@ export function ServerMetrics() {
                         <PillowCard
                             noHover
                             shadowClassName={displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown'
-                                ? 'bg-emerald-200 dark:bg-emerald-500/40 dark:shadow-[0_0_25px_rgba(16,185,129,0.4)]'
-                                : 'bg-red-200 dark:bg-red-500/40 dark:shadow-[0_0_25px_rgba(239,68,68,0.4)]'}
+                                ? 'bg-emerald-500/20 dark:bg-emerald-500/60 dark:shadow-[0_0_25px_rgba(16,185,129,0.4)]'
+                                : 'bg-red-500/20 dark:bg-red-500/60 dark:shadow-[0_0_25px_rgba(239,68,68,0.4)]'}
                             contentClassName="flex flex-col justify-center items-center text-center h-full p-8"
                             className="w-full h-full"
                         >
@@ -455,7 +449,7 @@ export function ServerMetrics() {
                     >
                         <PillowCard
                             noHover
-                            shadowClassName="bg-indigo-200 dark:bg-indigo-600/40 dark:shadow-[0_0_25px_rgba(79,70,229,0.4)]"
+                            shadowClassName="bg-indigo-500/20 dark:bg-indigo-500/60 dark:shadow-[0_0_25px_rgba(99,102,241,0.4)]"
                             contentClassName="flex flex-col h-full"
                             className="w-full h-full"
                         >
@@ -518,7 +512,7 @@ export function ServerMetrics() {
                     >
                         <PillowCard
                             noHover
-                            shadowClassName="bg-purple-200 dark:bg-purple-600/40 dark:shadow-[0_0_25px_rgba(147,51,234,0.4)]"
+                            shadowClassName="bg-purple-500/20 dark:bg-purple-500/60 dark:shadow-[0_0_25px_rgba(168,85,247,0.4)]"
                             contentClassName="flex flex-col justify-between h-full p-8"
                             className="w-full h-full"
                         >
@@ -555,7 +549,7 @@ export function ServerMetrics() {
                     >
                         <PillowCard
                             noHover
-                            shadowClassName="bg-amber-200 dark:bg-amber-600/40 dark:shadow-[0_0_25px_rgba(217,119,6,0.4)]"
+                            shadowClassName="bg-amber-500/20 dark:bg-amber-500/60 dark:shadow-[0_0_25px_rgba(245,158,11,0.4)]"
                             contentClassName="flex flex-col justify-between h-full p-8"
                             className="w-full h-full"
                         >
@@ -600,7 +594,7 @@ export function ServerMetrics() {
                     >
                         <PillowCard
                             noHover
-                            shadowClassName="bg-pink-200 dark:bg-pink-600/40 dark:shadow-[0_0_25px_rgba(219,39,119,0.4)]"
+                            shadowClassName="bg-pink-500/20 dark:bg-pink-500/60 dark:shadow-[0_0_25px_rgba(236,72,153,0.4)]"
                             contentClassName="flex flex-col justify-between h-full p-8"
                             className="w-full h-full"
                         >
@@ -637,7 +631,7 @@ export function ServerMetrics() {
                     >
                         <PillowCard
                             noHover
-                            shadowClassName="bg-sky-200 dark:bg-sky-600/40 dark:shadow-[0_0_25px_rgba(14,165,233,0.4)]"
+                            shadowClassName="bg-sky-500/20 dark:bg-sky-500/60 dark:shadow-[0_0_25px_rgba(14,165,233,0.4)]"
                             contentClassName="flex flex-col h-full p-8"
                             className="w-full h-full"
                         >
