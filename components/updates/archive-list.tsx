@@ -29,11 +29,12 @@ export function ArchiveList({ updates }: { updates: any[] }) {
                         <div className="group relative flex flex-col md:flex-row gap-4 bg-muted/5 border border-white/5 rounded-2xl p-4 hover:bg-white/5 transition-all cursor-pointer overflow-hidden">
                             {/* Small Thumbnail */}
                             <div className="relative w-full md:w-48 h-32 md:h-auto shrink-0 rounded-xl overflow-hidden">
-                                <Image
+                                <motion.img
                                     src={update.image}
                                     alt={update.title}
-                                    fill
-                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                    whileHover={{ scale: 1.1 }}
+                                    transition={{ duration: 0.8, ease: [0.33, 1, 0.68, 1] }}
+                                    className="absolute inset-0 w-full h-full object-cover"
                                 />
                             </div>
 

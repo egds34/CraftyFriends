@@ -1,5 +1,5 @@
 import { headers } from "next/headers"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe"
 import { prisma } from "@/lib/prisma"
@@ -282,6 +282,7 @@ export async function POST(req: Request) {
             // Get the default price for this product
             let priceAmount = 0
             let stripePriceId: string | null = null
+            let isRecurring = false
 
             if (product.default_price) {
                 const priceId = typeof product.default_price === 'string'
@@ -291,11 +292,12 @@ export async function POST(req: Request) {
                 const price = await stripe.prices.retrieve(priceId)
                 priceAmount = price.unit_amount ? price.unit_amount / 100 : 0
                 stripePriceId = price.id
+                isRecurring = !!price.recurring
             }
 
             // Extract metadata
             const category = product.metadata?.category || "misc"
-            const type = product.metadata?.type || "one-time"
+            const type = isRecurring ? "subscription" : (product.metadata?.type || "one-time")
             const features = product.metadata?.features
                 ? JSON.parse(product.metadata.features)
                 : []
@@ -345,6 +347,7 @@ export async function POST(req: Request) {
 
             console.log(`[WEBHOOK] Product ${event.type} SUCCESS: ${product.name}`)
             revalidatePath('/store')
+            revalidateTag('products')
         }
 
     } catch (error: any) {

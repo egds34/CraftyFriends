@@ -45,15 +45,15 @@ export function VotingSection({ sites }: VotingSectionProps) {
                             >
                                 <PillowCard
                                     shadowClassName={`transition-colors duration-300 ${[
-                                        "bg-red-500/40",
-                                        "bg-orange-500/40",
-                                        "bg-amber-500/40",
-                                        "bg-emerald-500/40",
-                                        "bg-cyan-500/40",
-                                        "bg-blue-500/40",
-                                        "bg-violet-500/40",
-                                        "bg-purple-500/40",
-                                        "bg-pink-500/40"
+                                        "bg-red-500/40 dark:shadow-[0_0_25px_rgba(239,68,68,0.4)]",
+                                        "bg-orange-500/40 dark:shadow-[0_0_25px_rgba(249,115,22,0.4)]",
+                                        "bg-amber-500/40 dark:shadow-[0_0_25px_rgba(245,158,11,0.4)]",
+                                        "bg-emerald-500/40 dark:shadow-[0_0_25px_rgba(16,185,129,0.4)]",
+                                        "bg-cyan-500/40 dark:shadow-[0_0_25px_rgba(6,182,212,0.4)]",
+                                        "bg-blue-500/40 dark:shadow-[0_0_25px_rgba(59,130,246,0.4)]",
+                                        "bg-violet-500/40 dark:shadow-[0_0_25px_rgba(139,92,246,0.4)]",
+                                        "bg-purple-500/40 dark:shadow-[0_0_25px_rgba(168,85,247,0.4)]",
+                                        "bg-pink-500/40 dark:shadow-[0_0_25px_rgba(236,72,153,0.4)]"
                                     ][index % 9]}`}
                                     className="h-full"
                                     contentClassName="flex items-center gap-4 p-6"

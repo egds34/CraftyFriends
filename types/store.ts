@@ -2,6 +2,7 @@ export type ProductType = 'subscription' | 'one-time'
 
 export interface Product {
     id: string
+    stripeProductId?: string
     name: string
     description: string
     summary?: string // Short description for product card

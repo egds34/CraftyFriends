@@ -396,13 +396,13 @@ export function ServerMetrics() {
                         whileInView={{ scale: 1, opacity: 1 }}
                         viewport={{ once: true }}
                         transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.05 }}
-                        className="lg:col-span-1 h-full"
+                        className="md:col-span-2 lg:col-span-1 h-full"
                     >
                         <PillowCard
                             noHover
                             shadowClassName={displayLatest.status !== 'OFFLINE' && displayLatest.status !== 'shutdown'
-                                ? 'bg-emerald-500/40'
-                                : 'bg-red-500/40'}
+                                ? 'bg-emerald-200 dark:bg-emerald-500/40 dark:shadow-[0_0_25px_rgba(16,185,129,0.4)]'
+                                : 'bg-red-200 dark:bg-red-500/40 dark:shadow-[0_0_25px_rgba(239,68,68,0.4)]'}
                             contentClassName="flex flex-col justify-center items-center text-center h-full p-8"
                             className="w-full h-full"
                         >
@@ -455,7 +455,7 @@ export function ServerMetrics() {
                     >
                         <PillowCard
                             noHover
-                            shadowClassName="bg-indigo-600/40"
+                            shadowClassName="bg-indigo-200 dark:bg-indigo-600/40 dark:shadow-[0_0_25px_rgba(79,70,229,0.4)]"
                             contentClassName="flex flex-col h-full"
                             className="w-full h-full"
                         >
@@ -518,7 +518,7 @@ export function ServerMetrics() {
                     >
                         <PillowCard
                             noHover
-                            shadowClassName="bg-purple-600/40"
+                            shadowClassName="bg-purple-200 dark:bg-purple-600/40 dark:shadow-[0_0_25px_rgba(147,51,234,0.4)]"
                             contentClassName="flex flex-col justify-between h-full p-8"
                             className="w-full h-full"
                         >
@@ -555,7 +555,7 @@ export function ServerMetrics() {
                     >
                         <PillowCard
                             noHover
-                            shadowClassName="bg-amber-600/40"
+                            shadowClassName="bg-amber-200 dark:bg-amber-600/40 dark:shadow-[0_0_25px_rgba(217,119,6,0.4)]"
                             contentClassName="flex flex-col justify-between h-full p-8"
                             className="w-full h-full"
                         >
@@ -596,11 +596,11 @@ export function ServerMetrics() {
                         whileInView={{ scale: 1, opacity: 1 }}
                         viewport={{ once: true }}
                         transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.3 }}
-                        className="lg:col-span-1 h-full"
+                        className="md:col-span-2 lg:col-span-1 h-full"
                     >
                         <PillowCard
                             noHover
-                            shadowClassName="bg-pink-600/40"
+                            shadowClassName="bg-pink-200 dark:bg-pink-600/40 dark:shadow-[0_0_25px_rgba(219,39,119,0.4)]"
                             contentClassName="flex flex-col justify-between h-full p-8"
                             className="w-full h-full"
                         >
@@ -637,7 +637,7 @@ export function ServerMetrics() {
                     >
                         <PillowCard
                             noHover
-                            shadowClassName="bg-sky-600/40"
+                            shadowClassName="bg-sky-200 dark:bg-sky-600/40 dark:shadow-[0_0_25px_rgba(14,165,233,0.4)]"
                             contentClassName="flex flex-col h-full p-8"
                             className="w-full h-full"
                         >

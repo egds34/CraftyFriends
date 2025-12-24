@@ -6,15 +6,62 @@ import { Trash2, ShoppingCart, X, ChevronUp, Sparkles, Trophy, MessageCircle, Gi
 import { AnimatePresence, motion } from "framer-motion"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { ErrorModal } from "../error-modal"
 
 export function FloatingCart() {
     const { items, removeFromCart, total, isLoaded } = useCart()
     const [isOpen, setIsOpen] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     if (!isLoaded) return null
 
+    const handleCheckout = async () => {
+        try {
+            setIsLoading(true)
+            const response = await fetch('/api/stripe/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) throw new Error(data.error || 'Checkout failed')
+
+            if (data.url) {
+                window.location.href = data.url
+            }
+        } catch (error: any) {
+            console.error('Checkout error:', error)
+            let msg = error.message || 'Something went wrong with checkout.'
+            if (msg.includes("Invalid URL")) {
+                msg = "System Configuration Error: The server URL is invalid. Please check your NEXTAUTH_URL environment variable."
+            }
+            setError(msg)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    // Normalize category to handle lowercase singular values from Stripe
+    const normalizeCategory = (cat: string): string => {
+        const lower = cat.toLowerCase()
+        switch (lower) {
+            case 'membership':
+            case 'memberships': return 'Memberships'
+            case 'boost':
+            case 'boosts': return 'Boosts'
+            case 'chat': return 'Chat'
+            case 'donate': return 'Donate'
+            case 'misc': return 'Misc'
+            default: return 'Misc'
+        }
+    }
+
     const getIcon = (cat: string) => {
-        switch (cat) {
+        const normalized = normalizeCategory(cat)
+        switch (normalized) {
             case 'Memberships': return <Trophy className="h-4 w-4 text-yellow-500" />
             case 'Boosts': return <Zap className="h-4 w-4 text-blue-500" />
             case 'Chat': return <MessageCircle className="h-4 w-4 text-pink-500" />
@@ -113,8 +160,13 @@ export function FloatingCart() {
                                 <span>Total</span>
                                 <span className="text-xl">${total.toFixed(2)}</span>
                             </div>
-                            <Button className="w-full font-bold shadow-lg shadow-primary/20" size="lg" disabled={items.length === 0}>
-                                Go to Checkout
+                            <Button
+                                className="w-full font-bold shadow-lg shadow-primary/20"
+                                size="lg"
+                                disabled={items.length === 0 || isLoading}
+                                onClick={handleCheckout}
+                            >
+                                {isLoading ? "Processing..." : "Go to Checkout"}
                             </Button>
                         </motion.div>
                     </motion.div>
@@ -146,6 +198,12 @@ export function FloatingCart() {
                     )}
                 </div>
             </motion.button>
+
+            <ErrorModal
+                isOpen={!!error}
+                onClose={() => setError(null)}
+                message={error || ""}
+            />
         </div>
     )
 }

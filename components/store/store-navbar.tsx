@@ -5,10 +5,13 @@ import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { mockProducts } from "@/lib/mock-products"
 
-export function StoreNavbar() {
-    const [activeCategory, setActiveCategory] = useState("Memberships")
+interface StoreNavbarProps {
+    categories: string[]
+    activeCategory?: string
+}
 
-    const categories = Array.from(new Set(mockProducts.map(p => p.category)))
+export function StoreNavbar({ categories }: StoreNavbarProps) {
+    const [activeCategory, setActiveCategory] = useState(categories[0] || "Memberships")
 
     const scrollToCategory = (category: string) => {
         const element = document.getElementById(category)

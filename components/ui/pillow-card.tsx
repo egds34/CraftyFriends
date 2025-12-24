@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Squircle } from "@/components/ui/squircle";
 import { cn } from "@/lib/utils";
+import { InteractiveHoverBar } from "@/components/ui/interactive-hover-bar";
+
 
 interface PillowCardProps extends React.HTMLAttributes<HTMLDivElement> {
     /** Classes to apply to the disconnected shadow background (mostly for color) */
@@ -22,6 +24,8 @@ interface PillowCardProps extends React.HTMLAttributes<HTMLDivElement> {
     forceHover?: boolean;
     /** If true, disables the hover effect */
     noHover?: boolean;
+    /** If true, removes the disconnected shadow element behind the card */
+    noShadow?: boolean;
 }
 
 export function PillowCard({
@@ -31,9 +35,10 @@ export function PillowCard({
     contentClassName,
     shadowTop = "top-12",
     shadowBottom = "-bottom-3",
-    shadowLeft = "left-[2px]",
-    shadowRight = "right-[2px]",
+    shadowLeft = "left-[0px]",
+    shadowRight = "right-[0px]",
     noHover = false,
+    noShadow = false,
     animateOnMount = false,
     forceHover = false,
     ...props
@@ -86,63 +91,66 @@ export function PillowCard({
             {...props as any}
         >
             {/* Disconnected Shadow */}
-            <motion.div
-                animate={shadowVariant}
-                variants={{
-                    idle: { opacity: 0, scale: 0.8 },
-                    enter: {
-                        opacity: 1,
-                        scale: 1,
-                        ...wobbleKeyframes,
-                        transition: {
-                            opacity: { duration: 0.3, delay: 0.1 },
-                            scale: { duration: 0.4, delay: 0.1 },
-                            scaleX: wobbleTransition,
-                            scaleY: wobbleTransition,
-                            x: { ...wobbleTransition, ease: "easeInOut" }
+            {!noShadow && (
+                <motion.div
+                    animate={shadowVariant}
+                    variants={{
+                        idle: { opacity: 0, scale: 0.8 },
+                        enter: {
+                            opacity: 1,
+                            scale: 1,
+                            ...wobbleKeyframes,
+                            transition: {
+                                opacity: { duration: 0.3, delay: 0.1 },
+                                scale: { duration: 0.4, delay: 0.1 },
+                                scaleX: wobbleTransition,
+                                scaleY: wobbleTransition,
+                                x: { ...wobbleTransition, ease: "easeInOut" }
+                            }
+                        },
+                        rest: {
+                            opacity: 1,
+                            scale: 1,
+                            scaleX: 1,
+                            scaleY: 1,
+                            x: 0,
+                            transition: { duration: 0.3, ease: "easeOut" } // Smooth return to normal
+                        },
+                        hover: {
+                            opacity: 1,
+                            scale: 1,
+                            ...wobbleKeyframes,
+                            transition: {
+                                scaleX: wobbleTransition,
+                                scaleY: wobbleTransition,
+                                x: { ...wobbleTransition, ease: "easeInOut" }
+                            }
                         }
-                    },
-                    rest: {
-                        opacity: 1,
-                        scale: 1,
-                        scaleX: 1,
-                        scaleY: 1,
-                        x: 0,
-                        transition: { duration: 0.3, ease: "easeOut" } // Smooth return to normal
-                    },
-                    hover: {
-                        opacity: 1,
-                        scale: 1,
-                        ...wobbleKeyframes,
-                        transition: {
-                            scaleX: wobbleTransition,
-                            scaleY: wobbleTransition,
-                            x: { ...wobbleTransition, ease: "easeInOut" }
+                    }}
+                    onAnimationComplete={(definition) => {
+                        // When the entrance animation completes, switch to 'rest' state
+                        if (definition === 'enter') {
+                            setAnimationState('rest');
                         }
-                    }
-                }}
-                onAnimationComplete={(definition) => {
-                    // When the entrance animation completes, switch to 'rest' state
-                    if (definition === 'enter') {
-                        setAnimationState('rest');
-                    }
-                }}
-                className={cn(
-                    "absolute rounded-[40px] -z-10",
-                    shadowTop,
-                    shadowBottom,
-                    shadowLeft,
-                    shadowRight,
-                    shadowClassName
-                )}
-            />
+                    }}
+                    className={cn(
+                        "absolute rounded-[40px] -z-10",
+                        "dark:shadow-[0_0_20px_rgba(255,255,255,0.08)]", // Initial subtle baseline glow
+                        shadowTop,
+                        shadowBottom,
+                        shadowLeft,
+                        shadowRight,
+                        shadowClassName
+                    )}
+                />
+            )}
 
             {/* Main squircle card */}
             <Squircle
                 cornerRadius={65}
                 cornerSmoothing={1}
                 className={cn(
-                    "w-full h-full backdrop-blur-md border border-white/20 overflow-hidden",
+                    "w-full h-full backdrop-blur-md overflow-hidden",
                 )}
             >
                 {/* Animated Background Tint Layer */}
@@ -151,15 +159,42 @@ export function PillowCard({
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className={cn(
                         "absolute inset-0 pointer-events-none",
-                        "bg-white/80 dark:bg-white/90"
+                        "bg-white/80 dark:bg-zinc-900/60"
                     )}
                 />
 
                 {/* Content Layer */}
-                <div className={cn("relative z-10 w-full h-full p-8 dark:text-black", contentClassName)}>
+                <div className={cn("relative z-10 w-full h-full p-8 dark:text-slate-100", contentClassName)}>
                     {children}
                 </div>
             </Squircle>
         </motion.div>
     );
+}
+
+interface PillowButtonProps extends React.HTMLAttributes<HTMLDivElement> {
+    /** Tailwind color class for the hover text and border (e.g., 'group-hover:text-amber-500') or bg */
+    highlightClassName?: string;
+}
+
+export function PillowButton({ children, className, highlightClassName, ...props }: PillowButtonProps) {
+    // Default to w-full.
+    // If the parent has padding (like ProductCard), the consumer must provide negative margins via className
+    // to break out of the container.
+
+    return (
+        <InteractiveHoverBar
+            className={cn(
+                "w-full", // Default width
+                "h-20 flex items-center justify-center font-heading font-black text-lg uppercase tracking-widest transition-all duration-300 border-t border-black/5",
+                "bg-white/90 dark:bg-black/40 backdrop-blur-md text-black dark:text-white group-hover:text-white mt-auto",
+                // Highlight logic: Apply the highlight class when group (card) is hovered.
+                highlightClassName || "group-hover:text-primary group-hover:bg-primary/5",
+                className
+            )}
+            {...props}
+        >
+            {children}
+        </InteractiveHoverBar>
+    )
 }

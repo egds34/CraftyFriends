@@ -153,5 +153,123 @@ export const updatesData: ServerUpdate[] = [
         author: "DevTeam",
         category: "patch-notes",
         readTime: "1 min"
+    },
+    {
+        id: "deep-sea-adventure",
+        title: "Deep Sea Adventure Event",
+        excerpt: "Dive into the depths with our new underwater exploration event! Discover lost ruins and coral treasures.",
+        content: `
+            <p>Gather your Respiration enchantments! The Great Reef is now open for exploration.</p>
+            <h3>Event Highlights</h3>
+            <ul>
+                <li><strong>Sunken Temples:</strong> 5 new procedurally generated dungeons found in Deep Ocean biomes.</li>
+                <li><strong>Trident Hunt:</strong> Increased drop rates for Drowned during the event period.</li>
+                <li><strong>Conduit Rewards:</strong> Complete underwater challenges to earn rare Heart of the Sea fragments.</li>
+            </ul>
+        `,
+        date: "2024-08-28",
+        image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1000&auto=format&fit=crop",
+        author: "AdminX",
+        category: "event",
+        readTime: "4 min"
+    },
+    {
+        id: "redstone-engineering-101",
+        title: "Redstone Masterclass: Contraptions",
+        excerpt: "Learn how to build advanced sorting systems and automatic farms in our community workshop series.",
+        content: `<p>Calling all engineers! Our monthly community workshop is focusing on the power of Redstone.</p>`,
+        date: "2024-08-15",
+        image: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000&auto=format&fit=crop",
+        author: "CommunityMgr",
+        category: "community",
+        readTime: "6 min"
+    },
+    {
+        id: "voting-rewards-buff",
+        title: "Update: Triple Voting Rewards!",
+        excerpt: "To celebrate our growing community, we are tripling all voting rewards for the next 48 hours.",
+        content: `<p>Your support means everything. Go vote now on all 5 sites to claim massive rewards!</p>`,
+        date: "2024-08-05",
+        image: "https://images.unsplash.com/photo-1553481199-6565a5bb9109?q=80&w=1000&auto=format&fit=crop",
+        author: "SysAdmin",
+        category: "announcement",
+        readTime: "2 min"
+    },
+    {
+        id: "creative-world-v2",
+        title: "Creative World 2.0 Patch Notes",
+        excerpt: "Plots are now 50% larger! Plus, new WorldEdit permissions for veteran builders.",
+        content: `<p>We've overhauled the Creative server with massive performance improvements and larger build areas.</p>`,
+        date: "2024-07-20",
+        image: "https://images.unsplash.com/photo-1506399558188-daf6f892f764?q=80&w=1000&auto=format&fit=crop",
+        author: "DevTeam",
+        category: "patch-notes",
+        readTime: "3 min"
+    },
+    {
+        id: "skyblock-genesis-launch",
+        title: "Skyblock Season: Genesis",
+        excerpt: "A fresh start! New island themes, revamped minion mechanics, and a competitive leaderboard.",
+        content: `<p>Genesis brings a completely new way to play Skyblock. Start your island today and climb the ranks.</p>`,
+        date: "2024-07-01",
+        image: "https://images.unsplash.com/photo-1516281739211-3efbc3dec394?q=80&w=1000&auto=format&fit=crop",
+        author: "Owner",
+        category: "event",
+        readTime: "5 min"
+    },
+    {
+        id: "member-spotlight-builderz",
+        title: "Member Spotlight: The BuilderZ Team",
+        excerpt: "Meet the incredible build team behind our new Spawn City. Learn their tips and tricks.",
+        content: `<p>We sat down with the leads of BuilderZ to discuss their massive cathedral project and what inspires them.</p>`,
+        date: "2024-06-15",
+        image: "https://images.unsplash.com/photo-1471018621131-f55104be1219?q=80&w=1000&auto=format&fit=crop",
+        author: "CommunityMgr",
+        category: "community",
+        readTime: "7 min"
+    },
+    {
+        id: "anti-grief-update",
+        title: "Security Update: Advanced Anti-Grief",
+        excerpt: "We've implemented a custom rollback system and enhanced land protection features.",
+        content: `<p>Your builds are safer than ever. New commands allow you to manage invitations to your land more easily.</p>`,
+        date: "2024-06-02",
+        image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=1000&auto=format&fit=crop",
+        author: "SysAdmin",
+        category: "announcement",
+        readTime: "2 min"
+    },
+    {
+        id: "spring-bloom-festival",
+        title: "Spring Bloom Festival Recap",
+        excerpt: "Thank you for attending the festival! See the winning builds from the flower arrangement contest.",
+        content: `<p>Spring has truly bloomed on Crafty Friends. The community-made garden at spawn is now permanent!</p>`,
+        date: "2024-05-20",
+        image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1000&auto=format&fit=crop",
+        author: "CommunityMgr",
+        category: "community",
+        readTime: "3 min"
+    },
+    {
+        id: "mob-arena-v2-notes",
+        title: "Mob Arena Overhaul: V2 Released",
+        excerpt: "Prepare for 100 waves of chaos! New boss mechanics, kit upgrades, and multiplayer rewards.",
+        content: `<p>The Arena has been rebuilt from the ground up. Do you have what it takes to survive the final wave?</p>`,
+        date: "2024-05-05",
+        image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000&auto=format&fit=crop",
+        author: "DevTeam",
+        category: "patch-notes",
+        readTime: "4 min"
+    },
+    {
+        id: "treasure-hunt-weekend",
+        title: "Treasure Hunt: Hidden Loot!",
+        excerpt: "20 hidden chests have been placed around the survival world. Can you find them all before Sunday?",
+        content: `<p>Grab your maps and start searching! Each chest contains rare items or seasonal tokens.</p>`,
+        date: "2024-04-20",
+        image: "https://images.unsplash.com/photo-1542401886-65d6c60db27b?q=80&w=1000&auto=format&fit=crop",
+        author: "AdminX",
+        category: "event",
+        readTime: "2 min"
     }
 ];

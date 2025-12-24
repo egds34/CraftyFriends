@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 export const dynamic = 'force-dynamic';
 
 export default async function UpdatesPage() {
-    const { data: dbUpdates, hasMore } = await getUpdates(0, 20);
-    const updates = dbUpdates && dbUpdates.length > 0 ? dbUpdates : mockData;
+    const updates = mockData;
+    const hasMore = false;
     const session = await auth();
     const isAdmin = session?.user?.role === "ADMIN";
 

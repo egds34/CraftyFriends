@@ -12,37 +12,21 @@ export async function POST(req: Request) {
             return new NextResponse("Unauthorized", { status: 401 })
         }
 
-        const { priceId } = await req.json()
-        let actualPriceId = priceId
-        if (priceId === 'premium') {
-            actualPriceId = process.env.STRIPE_PRICE_ID
+        const body = await req.json()
+        const { items } = body
+
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return new NextResponse("No items in cart", { status: 400 })
         }
 
-        if (!actualPriceId) {
-            return new NextResponse("Missing Price ID", { status: 400 })
-        }
-
-        // Retrieve price details to check product metadata
-        const priceObj = await stripe.prices.retrieve(actualPriceId, {
-            expand: ['product']
-        });
-
-        const productObj = priceObj.product as Stripe.Product;
-        const newCategory = productObj.metadata?.app_category || 'membership';
-        const newTierRank = parseInt(productObj.metadata?.tier_rank || '0', 10);
-
-        // Fetch user AND their active subscriptions
+        // Fetch user info for customer ID
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
             select: {
                 id: true,
                 email: true,
                 stripeCustomerId: true,
-                subscriptions: {
-                    where: {
-                        currentPeriodEnd: { gt: new Date() }
-                    }
-                }
+                // We'd ideally fetch subscriptions here for conflict checks if needed
             }
         })
 
@@ -50,42 +34,41 @@ export async function POST(req: Request) {
             return new NextResponse("User not found", { status: 404 })
         }
 
-        // CONFLICT & UPGRADE CHECK
-        if (newCategory === 'membership') {
-            const currentMembership = user.subscriptions.find((sub: any) => sub.category === 'membership');
+        // Build Line Items
+        const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = []
+        let mode: Stripe.Checkout.SessionCreateParams.Mode = 'payment'
 
-            if (currentMembership) {
-                // Determine rank of current membership
-                let oldTierRank = 0;
-                if (currentMembership.priceId) {
-                    try {
-                        const oldPrice = await stripe.prices.retrieve(currentMembership.priceId, {
-                            expand: ['product']
-                        });
-                        const oldProduct = oldPrice.product as Stripe.Product;
-                        oldTierRank = parseInt(oldProduct.metadata?.tier_rank || '0', 10);
-                    } catch (e) {
-                        console.error("[CHECKOUT] Failed to fetch old subscription details:", e);
-                        // Fallback: If we can't verify rank, we might want to fail safe or block.
-                        // For now, defaulting to 0 means we might allow a duplicate if Stripe fails, 
-                        // but blocking is safer to prevent double billing.
-                        oldTierRank = 999;
-                    }
-                }
+        for (const item of items) {
+            if (!item.priceId) {
+                console.warn(`[CHECKOUT] Item ${item.name} has no priceId, skipping.`)
+                continue
+            }
 
-                console.log(`[CHECKOUT] Upgrade Check: New Rank (${newTierRank}) vs Old Rank (${oldTierRank})`);
+            // Logic to handle "premium" placeholder if it exists in data
+            let actualPriceId = item.priceId
+            if (actualPriceId === 'premium') {
+                actualPriceId = process.env.STRIPE_PRICE_ID || ''
+            }
 
-                if (newTierRank <= oldTierRank) {
-                    return NextResponse.json(
-                        { error: "You already have an active membership at this tier or higher. Manage your subscription to change plans." },
-                        { status: 409 }
-                    );
-                }
-                // If New > Old, we allow it (Upgrade)
+            if (!actualPriceId) continue
+
+            line_items.push({
+                price: actualPriceId,
+                quantity: 1, // Cart currently doesn't have quantity per item, just distinct items
+            })
+
+            // If ANY item is a subscription, the whole session must be subscription mode
+            // (Stripe Checkout supports mixed cart in subscription mode)
+            if (item.type === 'subscription') {
+                mode = 'subscription'
             }
         }
 
-        // Check if user already has a Stripe Customer ID
+        if (line_items.length === 0) {
+            return new NextResponse("No valid items to checkout", { status: 400 })
+        }
+
+        // Check/Create Customer
         let stripeCustomerId = user.stripeCustomerId
 
         if (!stripeCustomerId) {
@@ -97,36 +80,34 @@ export async function POST(req: Request) {
             })
             stripeCustomerId = customer.id
 
-            // Save to user
             await prisma.user.update({
                 where: { id: user.id },
                 data: { stripeCustomerId }
             })
         }
 
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+        // Robust URL resolution: try public app url, then auth url, then localhost
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'
         let sessionUrl: string | null = null
 
         try {
-            const session = await stripe.checkout.sessions.create({
+            const sessionParams: Stripe.Checkout.SessionCreateParams = {
                 customer: stripeCustomerId,
-                mode: "subscription",
+                mode: mode,
                 client_reference_id: user.id,
-                line_items: [
-                    {
-                        price: actualPriceId,
-                        quantity: 1,
-                    },
-                ],
-                success_url: `${process.env.NEXTAUTH_URL}/account?success=true`,
-                cancel_url: `${process.env.NEXTAUTH_URL}/account?canceled=true`,
+                line_items: line_items,
+                success_url: `${baseUrl}/account?success=true`,
+                cancel_url: `${baseUrl}/store?canceled=true`, // Redirect back to store on cancel
                 metadata: {
                     userId: user.id,
                 },
-            })
+            }
+
+            const session = await stripe.checkout.sessions.create(sessionParams)
             sessionUrl = session.url
+
         } catch (err: any) {
-            // Self-healing: If customer is missing
+            // Self-healing: If customer is missing in Stripe but exists in DB (deleted in dashboard?)
             if (err.code === 'resource_missing' && err.param === 'customer') {
                 console.log("[STRIPE_CHECKOUT] Customer ID invalid, creating new customer...")
 
@@ -141,22 +122,19 @@ export async function POST(req: Request) {
                 })
 
                 // Retry with new customer
-                const retrySession = await stripe.checkout.sessions.create({
+                const retryParams: Stripe.Checkout.SessionCreateParams = {
                     customer: newCustomer.id,
-                    mode: "subscription",
+                    mode: mode,
                     client_reference_id: user.id,
-                    line_items: [
-                        {
-                            price: actualPriceId,
-                            quantity: 1,
-                        },
-                    ],
-                    success_url: `${baseUrl}/dashboard?success=true`,
-                    cancel_url: `${baseUrl}?canceled=true`,
+                    line_items: line_items,
+                    success_url: `${baseUrl}/account?success=true`,
+                    cancel_url: `${baseUrl}/store?canceled=true`,
                     metadata: {
                         userId: user.id,
                     },
-                })
+                }
+
+                const retrySession = await stripe.checkout.sessions.create(retryParams)
                 sessionUrl = retrySession.url
             } else {
                 throw err
@@ -164,16 +142,13 @@ export async function POST(req: Request) {
         }
 
         if (!sessionUrl) {
-            console.error("[STRIPE_CHECKOUT] No URL generated")
             return NextResponse.json({ error: "Failed to create checkout session" }, { status: 500 })
         }
 
         return NextResponse.json({ url: sessionUrl })
+
     } catch (error: any) {
         console.error("[STRIPE_CHECKOUT] Error:", error)
-        const key = process.env.STRIPE_SECRET_KEY || ""
-        console.log("[STRIPE_CHECKOUT] Key Prefix:", key.substring(0, 8) + "...")
-
         return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 })
     }
 }

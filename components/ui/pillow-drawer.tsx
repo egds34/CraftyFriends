@@ -15,6 +15,9 @@ interface PillowDrawerProps {
         hover?: string
         text?: string
         ring?: string
+        solid?: string
+        shadow?: string
+        border?: string
     }
     footerDots?: boolean
     onOpenChange?: (isOpen: boolean) => void
@@ -27,11 +30,13 @@ export function PillowDrawer({
     drawerContent,
     className,
     contentClassName,
-    colors = {
-        bg: "bg-muted/50",
-        hover: "hover:bg-muted/70",
-        text: "text-primary",
-        ring: "focus:ring-primary/50"
+    colors = { // Updated default colors object
+        bg: "bg-indigo-500/10 dark:bg-indigo-500/40",
+        border: "border-indigo-500 dark:border-indigo-500", // Increased saturation for dark mode border
+        hover: "hover:bg-indigo-500/20 dark:bg-indigo-400/60",
+        text: "text-indigo-600 dark:text-indigo-300",
+        ring: "focus:ring-indigo-500/50",
+        shadow: "shadow-current/20" // Fixed opacity shadow
     },
     footerDots = true,
     onOpenChange,
@@ -165,11 +170,34 @@ export function PillowDrawer({
                     x: { duration: 0.8, ease: "easeInOut" }
                 }}
                 className={cn(
-                    "absolute top-12 left-1 right-1 backdrop-blur-md rounded-[40px] z-[-1] flex flex-col overflow-hidden cursor-pointer transition-colors",
+                    "absolute top-12 left-0 right-0 backdrop-blur-xl rounded-[40px] z-[-1] flex flex-col overflow-hidden cursor-pointer transition-colors",
                     colors.bg,
-                    colors.hover
+                    colors.hover,
+                    shadowClassName // Inherit colored glow if provided
                 )}
             >
+                {/* Background Solidifier - Neutral High Contrast (Black/White) */}
+                <motion.div
+                    className="absolute inset-0 -z-10 bg-white/95 dark:bg-zinc-950/90"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: isDrawerOpen ? 1 : 0 }}
+                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                />
+
+                {/* Animated Border - Eases in when open with thematic color */}
+                {colors.border && (
+                    <motion.div
+                        className={cn(
+                            "absolute inset-0 rounded-[40px] border-[3px] pointer-events-none z-30 transition-colors duration-400",
+                            colors.border,
+                            isDrawerOpen && colors.shadow // Apply shadow from colors prop when open
+                        )}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: isDrawerOpen ? 1 : 0 }}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                    />
+                )}
+
                 {/* Spacer to push drawer content below the main card */}
                 <div
                     className="flex-shrink-0 w-full"
@@ -208,6 +236,7 @@ export function PillowDrawer({
                     onClick={() => setIsDrawerOpen(!isDrawerOpen)}
                     animateOnMount={true}
                     forceHover={isHovered}
+                    noShadow={true}
                 >
                     {children}
                 </PillowCard>

@@ -8,7 +8,8 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
-    "seed": "npx tsx scripts/seed-stats.ts"
+    "seed": "npx tsx scripts/seed-stats.ts",
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe"
   },
   "prisma": {
     "seed": "npx tsx scripts/seed-stats.ts"
@@ -54,7 +55,8 @@
     "skinview3d": "^3.4.1",
     "stripe": "^20.0.0",
     "tailwind-merge": "^3.4.0",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

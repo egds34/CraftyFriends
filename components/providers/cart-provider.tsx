@@ -38,17 +38,44 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
     }, [items, isMounted])
 
+    // Refresh cart with latest product data
+    useEffect(() => {
+        if (!isMounted) return
+
+        const refreshCart = async () => {
+            try {
+                const response = await fetch('/api/products')
+                if (!response.ok) return
+                const products: Product[] = await response.json()
+
+                setItems(prevItems => {
+                    const freshItems = prevItems.map(item => {
+                        const freshProduct = products.find(p => p.id === item.id)
+                        if (!freshProduct || freshProduct.isActive === false) return null // Remove if deleted or inactive
+                        return { ...freshProduct, cartId: item.cartId } // Update details, keep cartId
+                    }).filter((item): item is CartItem => item !== null)
+
+                    // Only update if changed (basic comparison)
+                    if (JSON.stringify(freshItems) !== JSON.stringify(prevItems)) {
+                        return freshItems
+                    }
+                    return prevItems
+                })
+            } catch (err) {
+                console.error("Failed to refresh cart", err)
+            }
+        }
+
+        refreshCart()
+    }, [isMounted])
+
     const addToCart = (product: Product) => {
         let newItems = [...items]
 
-        // Logic: Subscription Override
+        // Logic: Enforce single subscription
         if (product.type === 'subscription') {
-            // Remove any other subscription of the same category (e.g. Memberships)
-            // or just any subscription if we only allow one "primary" membership at a time.
-            // Assumption: Categories are "Memberships"
-            if (product.category === 'Memberships') {
-                newItems = newItems.filter(item => item.category !== 'Memberships')
-            }
+            // Remove any existing subscription to ensure only one subscription per cart
+            newItems = newItems.filter(item => item.type !== 'subscription')
         }
 
         const cartItem: CartItem = {

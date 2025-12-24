@@ -4,9 +4,41 @@ import { useCart } from "@/components/providers/cart-provider"
 import { Button } from "@/components/ui/button"
 import { Trash2, ShoppingCart } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
+import { useState } from "react"
+import { ErrorModal } from "../error-modal"
 
 export function StickyCart() {
     const { items, removeFromCart, total } = useCart()
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    const handleCheckout = async () => {
+        try {
+            setIsLoading(true)
+            const response = await fetch('/api/stripe/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) throw new Error(data.error || 'Checkout failed')
+
+            if (data.url) {
+                window.location.href = data.url
+            }
+        } catch (error: any) {
+            console.error('Checkout error:', error)
+            let msg = error.message || 'Something went wrong with checkout.'
+            if (msg.includes("Invalid URL")) {
+                msg = "System Configuration Error: The server URL is invalid. Please check your NEXTAUTH_URL environment variable."
+            }
+            setError(msg)
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     return (
         <div className="sticky top-32 h-fit w-full max-w-sm rounded-xl border bg-card shadow-lg p-6">
@@ -66,13 +98,23 @@ export function StickyCart() {
                     <span>Total</span>
                     <span>${total.toFixed(2)}</span>
                 </div>
-                <Button className="w-full" size="lg" disabled={items.length === 0}>
-                    Go to Checkout
+                <Button
+                    className="w-full"
+                    size="lg"
+                    disabled={items.length === 0 || isLoading}
+                    onClick={handleCheckout}
+                >
+                    {isLoading ? "Processing..." : "Go to Checkout"}
                 </Button>
                 <p className="text-center text-xs text-muted-foreground">
                     Tax included. Secure checkout via Stripe.
                 </p>
             </div>
+            <ErrorModal
+                isOpen={!!error}
+                onClose={() => setError(null)}
+                message={error || ""}
+            />
         </div>
     )
 }

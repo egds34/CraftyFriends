@@ -1,5 +1,6 @@
 import { Newspaper, Search, Filter } from "lucide-react";
 import { getUpdates } from "@/app/actions/updates";
+import { updatesData as mockData } from "@/lib/updates-data";
 import { UpdatesFeed } from "@/components/updates/updates-feed"; // Re-using Feed (Option C) or creating new List (Option B)? User asked for B. I'll create a List view.
 import { ArchiveFilters } from "@/components/updates/archive-filters";
 import { ArchiveList } from "@/components/updates/archive-list";
@@ -14,10 +15,19 @@ interface ArchivePageProps {
 }
 
 export default async function ArchivePage({ searchParams }: ArchivePageProps) {
-    const { data: updates } = await getUpdates(0, 100, {
-        search: searchParams.q,
-        category: searchParams.category
-    });
+    let updates = mockData;
+
+    if (searchParams.q) {
+        const query = searchParams.q.toLowerCase();
+        updates = updates.filter(u =>
+            u.title.toLowerCase().includes(query) ||
+            u.excerpt.toLowerCase().includes(query)
+        );
+    }
+
+    if (searchParams.category && searchParams.category !== 'all') {
+        updates = updates.filter(u => u.category === searchParams.category);
+    }
 
     return (
         <div className="min-h-screen bg-black text-foreground pt-24 pb-20 relative">

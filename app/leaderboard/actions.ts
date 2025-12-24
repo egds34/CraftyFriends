@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { unstable_cache } from "next/cache"
 import { auth } from "@/auth"
+import { unstable_noStore as noStore } from "next/cache"
 
 interface StatDefinition {
     section: string
@@ -178,24 +179,14 @@ export interface LeaderboardCategory {
 }
 
 export async function getLeaderboardData(): Promise<LeaderboardCategory[]> {
+    noStore();
     // 1. Fetch relevant statistics
-    // We fetch broader categories to sure we get the data, then filter in memory
+    const whitelist = Object.keys(STAT_DEFINITIONS)
     const stats = await prisma.statistic.findMany({
         where: {
             OR: [
-                { category: "minecraft:custom" },
-                {
-                    id: {
-                        in: [
-                            "minecraft:mined:total",
-                            "minecraft:broken:total",
-                            "minecraft:crafted:total",
-                            "minecraft:picked_up:total",
-                            "minecraft:dropped:total",
-                            "minecraft:used:total"
-                        ]
-                    }
-                }
+                { id: { in: whitelist } },
+                { name: { in: whitelist }, category: "minecraft:custom" }
             ]
         },
         include: {
@@ -203,8 +194,7 @@ export async function getLeaderboardData(): Promise<LeaderboardCategory[]> {
                 orderBy: { value: 'desc' },
                 take: 50
             }
-        },
-        take: 5000 // Ensure we fetch enough to find our whitelist matches
+        }
     })
 
     // 2. Transform and Filter data based on STAT_DEFINITIONS

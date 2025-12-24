@@ -14,7 +14,7 @@ export function DynamicBackground() {
     if (!mounted) return null;
 
     return (
-        <div className="fixed inset-0 z-0 overflow-hidden bg-background">
+        <div className="fixed inset-0 z-0 overflow-hidden bg-background dark:bg-zinc-950">
             <div className="absolute inset-0 opacity-30 dark:opacity-20 blur-[100px] pointer-events-none transform-gpu">
                 {/* Blob 1 - Purple/Pink - Top Left */}
                 <motion.div

@@ -4,12 +4,13 @@ import { useState, useEffect } from "react"
 import { Event, EventType, Role } from "@prisma/client"
 import { motion, AnimatePresence } from "framer-motion"
 import { format, addDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, getDay, parseISO } from "date-fns"
-import { ChevronLeft, ChevronRight, Plus, Trash2, Calendar as CalendarIcon, Clock } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus, Trash2, Calendar as CalendarIcon, Clock, ArrowUpRight } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"
 import { createEvent, deleteEvent, deleteEventSeries } from "@/app/actions/events"
 import { Badge } from "@/components/ui/badge"
-import { PillowCard } from "@/components/ui/pillow-card"
+import { PillowCard, PillowButton } from "@/components/ui/pillow-card"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 
@@ -91,6 +92,25 @@ export function EventsClient({ initialEvents, eventTemplates, userRole }: Events
         selectedEvent.title.toLowerCase().includes(info.title.toLowerCase().split(' ')[0]) ||
         info.title.toLowerCase().includes(selectedEvent.title.toLowerCase())
     ) : null
+
+    // Helper to add dark mode glow based on the base shadow color class
+    const getEnhancedShadow = (baseColor: string) => {
+        if (baseColor.includes("blue")) return "dark:shadow-[0_0_25px_rgba(59,130,246,0.4)]";
+        if (baseColor.includes("amber") || baseColor.includes("orange")) return "dark:shadow-[0_0_25px_rgba(245,158,11,0.4)]";
+        if (baseColor.includes("emerald") || baseColor.includes("green")) return "dark:shadow-[0_0_25px_rgba(16,185,129,0.4)]";
+        if (baseColor.includes("pink") || baseColor.includes("rose")) return "dark:shadow-[0_0_25px_rgba(236,72,153,0.4)]";
+        if (baseColor.includes("purple") || baseColor.includes("violet")) return "dark:shadow-[0_0_25px_rgba(168,85,247,0.4)]";
+        return "dark:shadow-[0_0_25px_rgba(255,255,255,0.1)]"; // Fallback
+    };
+
+    const getHoverBg = (baseColor: string) => {
+        if (baseColor.includes("blue")) return "group-hover:bg-blue-500 dark:group-hover:bg-blue-400 group-hover:text-white";
+        if (baseColor.includes("amber") || baseColor.includes("orange")) return "group-hover:bg-amber-500 dark:group-hover:bg-amber-400 group-hover:text-white";
+        if (baseColor.includes("emerald") || baseColor.includes("green")) return "group-hover:bg-emerald-500 dark:group-hover:bg-emerald-400 group-hover:text-white";
+        if (baseColor.includes("pink") || baseColor.includes("rose")) return "group-hover:bg-pink-500 dark:group-hover:bg-pink-400 group-hover:text-white";
+        if (baseColor.includes("purple") || baseColor.includes("violet")) return "group-hover:bg-purple-500 dark:group-hover:bg-purple-400 group-hover:text-white";
+        return "group-hover:bg-primary dark:group-hover:bg-primary/80 group-hover:text-white";
+    };
 
     return (
         <div className="space-y-8">
@@ -342,16 +362,20 @@ export function EventsClient({ initialEvents, eventTemplates, userRole }: Events
                         <PillowCard
                             key={info.title}
                             className="h-[480px] cursor-pointer group"
-                            shadowClassName={info.shadowColor}
+                            shadowClassName={cn(info.shadowColor, getEnhancedShadow(info.shadowColor))}
                             contentClassName="flex flex-col p-0"
                             onClick={() => setSelectedInfo(info)}
                         >
                             {/* Top Image & Text Section */}
                             <div className="flex-1 relative overflow-hidden">
-                                <img
+                                <motion.img
+                                    initial={false}
+                                    animate={{ scale: selectedInfo?.title === info.title ? 1.1 : 1 }}
+                                    whileHover={{ scale: 1.1 }}
+                                    transition={{ duration: 0.8, ease: [0.33, 1, 0.68, 1] }} // Smooth easeOutExpo
                                     src={info.image}
                                     alt={info.title}
-                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                    className="absolute inset-0 w-full h-full object-cover opacity-90"
                                 />
                                 {/* Gradient Overlay */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 flex flex-col justify-end text-left">
@@ -365,14 +389,13 @@ export function EventsClient({ initialEvents, eventTemplates, userRole }: Events
                             </div>
 
                             {/* Highlighting Bottom Area (Shop Style) */}
-                            <div className={cn(
-                                "h-16 flex items-center justify-center font-heading font-bold text-lg transition-all border-t border-black/5",
-                                "bg-white/90 dark:bg-slate-100/90 text-muted-foreground",
-                                info.hoverColor,
-                                "group-hover:text-white"
-                            )}>
+                            <PillowButton
+                                className="h-14 text-xs font-black"
+                                highlightClassName={getHoverBg(info.shadowColor)}
+                            >
                                 View Rules & Guide
-                            </div>
+                                <ArrowUpRight className="ml-2 w-4 h-4 opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-x-2 group-hover:translate-x-0" />
+                            </PillowButton>
                         </PillowCard>
                     ))}
                 </div>

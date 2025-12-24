@@ -1,24 +1,16 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { unstable_cache } from "next/cache"
 
-const getCachedProducts = unstable_cache(
-    async () => {
-        return await prisma.product.findMany({
+export async function GET() {
+    try {
+        // Fetch products directly from DB (no cache) to ensure fresh Admin updates appear immediately
+        const products = await prisma.product.findMany({
             where: { active: true },
             orderBy: [
                 { category: 'asc' },
                 { price: 'asc' }
             ]
         })
-    },
-    ["products-list"],
-    { revalidate: 3600, tags: ["products"] }
-)
-
-export async function GET() {
-    try {
-        const products = await getCachedProducts()
 
         // Transform to match the Product type expected by the frontend
         const transformedProducts = products.map((product: any) => {

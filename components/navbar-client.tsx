@@ -11,6 +11,7 @@ import { UserNav } from "@/components/user-nav"
 import { User } from "next-auth"
 import { useCart } from "@/components/providers/cart-provider"
 import { ShoppingCart, Trophy, BarChart3, Map as MapIcon, CalendarDays, Newspaper, Search as SearchIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 function CartBadge() {
     const { items } = useCart()
@@ -91,83 +92,60 @@ export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
             <div className="w-full flex h-16 items-center justify-between px-6 relative pointer-events-auto">
                 <div className="flex items-center gap-8">
                     {/* Mobile View: Hamburger Menu + Logo */}
-                    <div className="md:hidden">
+                    <div className="xl:hidden">
                         <SideMenu blueMapUrl={blueMapUrl}>
                             {LogoContent}
                         </SideMenu>
                     </div>
 
                     {/* Desktop View: Just Logo (Links are centered) */}
-                    <div className="hidden md:flex items-center gap-8">
+                    <div className="hidden xl:flex items-center gap-8">
                         {LogoContent}
                     </div>
                 </div>
 
                 {/* Desktop Centered Links - Always Visible */}
-                <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                <div className="hidden xl:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                     <nav className="flex items-center gap-12">
-                        <Link
-                            href="/store"
-                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
-                        >
-                            <Trophy className="w-4 h-4" />
-                            Shop
-                        </Link>
-                        <Link
-                            href="/updates"
-                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
-                        >
-                            <Newspaper className="w-4 h-4" />
-                            Updates
-                        </Link>
-                        <Link
-                            href="/events"
-                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
-                        >
-                            <CalendarDays className="w-4 h-4" />
-                            Events
-                        </Link>
-                        <Link
-                            href="/leaderboard"
-                            className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
-                        >
-                            <BarChart3 className="w-4 h-4" />
-                            Leaderboard
-                        </Link>
-                        {blueMapUrl && (
-                            <Link
-                                href="/map"
-                                className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-2"
-                            >
-                                <MapIcon className="w-4 h-4" />
-                                BlueMap
-                            </Link>
-                        )}
+                        {[
+                            { href: "/store", label: "Shop", icon: Trophy },
+                            { href: "/updates", label: "Updates", icon: Newspaper },
+                            { href: "/events", label: "Events", icon: CalendarDays },
+                            { href: "/leaderboard", label: "Leaderboard", icon: BarChart3 },
+                            ...(blueMapUrl ? [{ href: blueMapUrl, label: "BlueMap", icon: MapIcon }] : []),
+                        ].map((link) => {
+                            const isActive = pathname.startsWith(link.href)
+                            const Icon = link.icon
+
+                            return (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className={cn(
+                                        "text-sm flex items-center gap-2 transition-all duration-300 group",
+                                        isActive ? "text-primary" : "text-foreground/80 hover:text-primary"
+                                    )}
+                                >
+                                    <Icon className="w-4 h-4" />
+                                    <span className="relative inline-flex flex-col items-center">
+                                        <span className={cn(
+                                            "transition-all duration-300",
+                                            isActive ? "font-black" : "font-bold group-hover:font-black"
+                                        )}>
+                                            {link.label}
+                                        </span>
+                                        {/* Invisible placeholder to prevent shifting */}
+                                        <span className="font-black invisible h-0 overflow-hidden" aria-hidden="true">
+                                            {link.label}
+                                        </span>
+                                    </span>
+                                </Link>
+                            )
+                        })}
                     </nav>
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <div className="hidden lg:block relative group">
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                const formData = new FormData(e.currentTarget);
-                                const query = formData.get('q');
-                                if (query && typeof query === 'string' && query.trim().length > 0) {
-                                    router.push(`/search?q=${encodeURIComponent(query)}`);
-                                }
-                            }}
-                            className="relative"
-                        >
-                            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                            <input
-                                type="text"
-                                name="q"
-                                placeholder="Search everything..."
-                                className="w-48 bg-white/5 border border-white/10 focus:border-primary/50 text-sm rounded-full pl-10 pr-4 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/50"
-                            />
-                        </form>
-                    </div>
                     {sessionUser ? (
                         <UserNav user={sessionUser} />
                     ) : (

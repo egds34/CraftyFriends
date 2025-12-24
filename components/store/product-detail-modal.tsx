@@ -73,7 +73,7 @@ export function ProductDetailModal({ isOpen, onClose, product, onAddToCart }: Pr
                                             </h2>
                                             <div className="flex items-baseline gap-2">
                                                 <span className="text-2xl font-bold text-primary">
-                                                    {product.price === 0 ? 'Free' : `$${product.price}`}
+                                                    {product.price === 0 ? 'Free' : `$${product.price.toFixed(2)}`}
                                                 </span>
                                                 {product.type === 'subscription' && (
                                                     <span className="text-sm text-muted-foreground">/mo</span>
@@ -107,8 +107,8 @@ export function ProductDetailModal({ isOpen, onClose, product, onAddToCart }: Pr
                                                 <Button
                                                     onClick={handleAddToCart}
                                                     className={`w-full h-12 text-lg font-bold transition-all rounded-xl shadow-lg ${product.isActive === false
-                                                            ? 'bg-muted text-muted-foreground cursor-not-allowed hover:bg-muted'
-                                                            : 'bg-primary hover:bg-primary/90 hover:shadow-primary/25'
+                                                        ? 'bg-muted text-muted-foreground cursor-not-allowed hover:bg-muted'
+                                                        : 'bg-primary hover:bg-primary/90 hover:shadow-primary/25'
                                                         }`}
                                                     disabled={product.price === 0 || product.isActive === false}
                                                 >

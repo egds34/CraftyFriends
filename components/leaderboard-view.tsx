@@ -9,10 +9,17 @@ import { PillowCard } from "@/components/ui/pillow-card"
 import { PillowDrawer } from "@/components/ui/pillow-drawer"
 import { PlayerProfileModal } from "@/components/player-profile-modal"
 import { SignInModal } from "@/components/sign-in-modal"
+import { cn } from "@/lib/utils"
 
-export function LeaderboardView({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
-    const [categories, setCategories] = useState<LeaderboardCategory[]>([])
-    const [isLoading, setIsLoading] = useState(true)
+export function LeaderboardView({
+    isAuthenticated = false,
+    initialData = []
+}: {
+    isAuthenticated?: boolean,
+    initialData?: LeaderboardCategory[]
+}) {
+    const [categories, setCategories] = useState<LeaderboardCategory[]>(initialData)
+    const [isLoading, setIsLoading] = useState(initialData.length === 0)
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
     const [isSignInOpen, setIsSignInOpen] = useState(false)
     const [activeTab, setActiveTab] = useState("Distance")
@@ -26,6 +33,12 @@ export function LeaderboardView({ isAuthenticated = false }: { isAuthenticated?:
     }
 
     useEffect(() => {
+        // Only fetch if we don't have initial data or categories is empty
+        if (initialData.length > 0 && categories.length > 0) {
+            setIsLoading(false)
+            return
+        }
+
         async function fetchData() {
             try {
                 const data = await getLeaderboardData()
@@ -37,7 +50,7 @@ export function LeaderboardView({ isAuthenticated = false }: { isAuthenticated?:
             }
         }
         fetchData()
-    }, [])
+    }, [initialData])
 
     if (isLoading) {
         return <div className="text-center py-20 text-muted-foreground">Loading leaderboards...</div>
@@ -289,10 +302,12 @@ function AggregateCard({
 
     // Fixed color for all aggregate cards
     const color = {
-        bg: "bg-indigo-500/20",
-        hover: "hover:bg-indigo-500/30",
-        text: "text-indigo-300",
-        ring: "focus:ring-indigo-500/50"
+        bg: "bg-indigo-500/10 dark:bg-indigo-500/40",
+        border: "border-indigo-500/20 dark:border-indigo-500/20",
+        hover: "hover:bg-indigo-500/20 dark:bg-indigo-400/60",
+        text: "text-indigo-600 dark:text-indigo-300",
+        ring: "focus:ring-indigo-500/50",
+        shadow: "dark:shadow-[0_0_20px_rgba(99,102,241,0.5)]"
     }
 
     // Calculate Server Total
@@ -305,23 +320,7 @@ function AggregateCard({
     return (
         <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
-            animate={
-                isOpen || isHovering
-                    ? { y: 0, scale: 1, opacity: 1 }
-                    : {
-                        y: [0, -8, 0],
-                        scale: 1,
-                        opacity: 1,
-                        transition: {
-                            y: {
-                                duration: floatConfig.duration,
-                                repeat: Infinity,
-                                ease: "easeInOut",
-                                delay: floatConfig.delay
-                            }
-                        }
-                    }
-            }
+            animate={{ scale: 1, opacity: 1 }}
             style={{ zIndex: isOpen || isHovering ? 40 : 1 }}
             className={`flex flex-col w-full relative group/aggregate flex-shrink-0 rounded-3xl ${className}`}
             onMouseEnter={() => setIsHovering(true)}
@@ -334,41 +333,43 @@ function AggregateCard({
                 className="flex-1 h-full"
                 colors={color}
                 onOpenChange={handleOpenChange}
+                shadowClassName={color.shadow}
                 shadowBottom="-bottom-6"
                 drawerContent={
                     <>
-                        <motion.div layout className="relative" onClick={(e) => e.stopPropagation()}>
+
+
+                        <motion.div layout className="relative mb-3" onClick={(e) => e.stopPropagation()}>
                             <input
                                 type="text"
-                                placeholder="Search..."
+                                placeholder="Search players..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className={`w-full pl-8 pr-3 py-1.5 text-xs bg-background/40 border-none rounded-2xl focus:outline-none focus:ring-2 placeholder:text-muted-foreground/70 ${color.ring}`}
-                                autoFocus
+                                className={`w-full pl-8 pr-3 py-2 text-xs bg-black/5 dark:bg-black/20 border-indigo-500/20 dark:border-white/10 border rounded-2xl focus:outline-none focus:ring-2 placeholder:text-muted-foreground/50 text-foreground dark:text-white ${color.ring}`}
                             />
-                            <Search className="absolute left-2.5 top-1.5 w-3.5 h-3.5 text-muted-foreground" />
+                            <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-indigo-500/50 dark:text-muted-foreground opacity-60" />
                         </motion.div>
 
                         <motion.div layout className="max-h-64 overflow-y-auto space-y-1 scrollbar-none" onClick={(e) => e.stopPropagation()}>
                             {filteredPlayers.length > 0 ? (
                                 filteredPlayers.map((player, idx) => {
-                                    const rank = 1 + idx; // Absolute rank since this is the full list
+                                    const rank = 1 + idx;
                                     return (
                                         <motion.div
                                             layout
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             key={player.username}
-                                            className="flex justify-between items-center text-xs px-3 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                            className="flex justify-between items-center text-xs px-3 py-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                                             onClick={() => onPlayerClick(player.username)}
                                         >
                                             <div className="flex items-center gap-2 overflow-hidden">
-                                                <span className="w-5 text-muted-foreground opacity-70">
+                                                <span className="w-5 text-muted-foreground font-mono">
                                                     #{rank}
                                                 </span>
-                                                <span className="truncate font-medium hover:underline">{player.username}</span>
+                                                <span className="truncate font-medium text-foreground dark:text-white/90 group-hover:text-foreground dark:group-hover:text-white">{player.username}</span>
                                             </div>
-                                            <span className="font-mono text-muted-foreground">{player.value.toLocaleString()} {category.unit}</span>
+                                            <span className="font-mono text-muted-foreground">{player.value.toLocaleString()}</span>
                                         </motion.div>
                                     )
                                 })
@@ -381,14 +382,16 @@ function AggregateCard({
                     </>
                 }
             >
-                <div className="flex-1 relative overflow-hidden h-full rounded-3xl z-0 bg-slate-900 border border-white/5">
+                <div className="flex-1 relative overflow-hidden h-full rounded-3xl z-0 bg-slate-900 pb-16">
                     {/* Background Image or Fallback Gradient */}
                     {bgImage ? (
                         <div className="absolute inset-0 w-full h-full bg-slate-900">
-                            <img
+                            <motion.img
                                 src={bgImage}
                                 alt={category.displayName}
-                                className={`w-full h-full object-cover opacity-90 transition-transform duration-700 ease-out will-change-transform ${isHovering ? "scale-110" : "scale-100"}`}
+                                animate={{ scale: isHovering ? 1.1 : 1 }}
+                                transition={{ duration: 0.8, ease: [0.33, 1, 0.68, 1] }} // Smooth easeOutExpo
+                                className="w-full h-full object-cover opacity-90 will-change-transform"
                             />
                             {/* Disclaimer - Only visible if we have an image */}
                             <div className="absolute top-2 right-3 z-30 pointer-events-none">
@@ -398,17 +401,24 @@ function AggregateCard({
                             </div>
                         </div>
                     ) : (
-                        <div className={`absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-500/80 via-purple-600/80 to-indigo-900/80 transition-transform duration-700 ease-out will-change-transform ${isHovering ? "scale-110" : "scale-100"}`} />
+                        <motion.div
+                            animate={{ scale: isHovering ? 1.1 : 1 }}
+                            transition={{ duration: 0.8, ease: [0.33, 1, 0.68, 1] }}
+                            className="absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-500/80 via-purple-600/80 to-indigo-900/80 will-change-transform"
+                        />
                     )}
 
                     {/* Hover Sheen Effect */}
                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent z-10 -translate-x-[150%] group-hover/card:translate-x-[150%] transition-transform duration-1000 ease-in-out" />
 
                     {/* Gradient Overlay for Text Readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 flex flex-col justify-end items-center text-center z-20">
-                        <h3 className={`font-black text-white drop-shadow-sm tracking-tight leading-tight ${size === 'lg' ? 'text-4xl' : 'text-2xl'}`}>
-                            {serverTotal.toLocaleString()} {category.displayName.replace("Most ", "").replace("Total ", "").replace("Furthest ", "")}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-6 flex flex-col justify-center items-center text-center z-20">
+                        <h3 className={`font-black text-white drop-shadow-xl tracking-tight leading-tight ${size === 'lg' ? 'text-4xl' : 'text-2xl'}`}>
+                            {serverTotal.toLocaleString()}
                         </h3>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 mt-1">
+                            {category.displayName.replace("Most ", "").replace("Total ", "").replace("Furthest ", "")}
+                        </p>
                     </div>
                 </div>
             </PillowDrawer>
@@ -580,14 +590,14 @@ function LeaderboardCard({
     })
 
     const colors = [
-        { bg: "bg-rose-500/20", hover: "hover:bg-rose-500/30", text: "text-rose-600", ring: "focus:ring-rose-500/50" },
-        { bg: "bg-orange-500/20", hover: "hover:bg-orange-500/30", text: "text-orange-600", ring: "focus:ring-orange-500/50" },
-        { bg: "bg-amber-500/20", hover: "hover:bg-amber-500/30", text: "text-amber-600", ring: "focus:ring-amber-500/50" },
-        { bg: "bg-emerald-500/20", hover: "hover:bg-emerald-500/30", text: "text-emerald-600", ring: "focus:ring-emerald-500/50" },
-        { bg: "bg-cyan-500/20", hover: "hover:bg-cyan-500/30", text: "text-cyan-600", ring: "focus:ring-cyan-500/50" },
-        { bg: "bg-blue-500/20", hover: "hover:bg-blue-500/30", text: "text-blue-600", ring: "focus:ring-blue-500/50" },
-        { bg: "bg-violet-500/20", hover: "hover:bg-violet-500/30", text: "text-violet-600", ring: "focus:ring-violet-500/50" },
-        { bg: "bg-fuchsia-500/20", hover: "hover:bg-fuchsia-500/30", text: "text-fuchsia-600", ring: "focus:ring-fuchsia-500/50" },
+        { bg: "bg-rose-500/10 dark:bg-rose-500/40", border: "border-rose-500/20 dark:border-rose-500/20", hover: "hover:bg-rose-500/20 dark:bg-rose-400/60", text: "text-rose-600 dark:text-rose-300", ring: "focus:ring-rose-500/50", shadow: "dark:shadow-[0_0_20px_rgba(244,63,94,0.5)]" },
+        { bg: "bg-orange-500/10 dark:bg-orange-500/40", border: "border-orange-500/20 dark:border-orange-500/20", hover: "hover:bg-orange-500/20 dark:bg-orange-400/60", text: "text-orange-600 dark:text-orange-300", ring: "focus:ring-orange-500/50", shadow: "dark:shadow-[0_0_20px_rgba(249,115,22,0.5)]" },
+        { bg: "bg-amber-500/10 dark:bg-amber-500/40", border: "border-amber-500/20 dark:border-amber-500/20", hover: "hover:bg-amber-500/20 dark:bg-amber-400/60", text: "text-amber-600 dark:text-amber-300", ring: "focus:ring-amber-500/50", shadow: "dark:shadow-[0_0_20px_rgba(245,158,11,0.5)]" },
+        { bg: "bg-emerald-500/10 dark:bg-emerald-500/40", border: "border-emerald-500/20 dark:border-emerald-500/20", hover: "hover:bg-emerald-500/20 dark:bg-emerald-400/60", text: "text-emerald-600 dark:text-emerald-300", ring: "focus:ring-emerald-500/50", shadow: "dark:shadow-[0_0_20px_rgba(16,185,129,0.5)]" },
+        { bg: "bg-cyan-500/10 dark:bg-cyan-500/40", border: "border-cyan-500/20 dark:border-cyan-500/20", hover: "hover:bg-cyan-500/20 dark:bg-cyan-400/60", text: "text-cyan-600 dark:text-cyan-300", ring: "focus:ring-cyan-500/50", shadow: "dark:shadow-[0_0_20px_rgba(6,182,212,0.5)]" },
+        { bg: "bg-blue-500/10 dark:bg-blue-500/40", border: "border-blue-500/20 dark:border-blue-500/20", hover: "hover:bg-blue-500/20 dark:bg-blue-400/60", text: "text-blue-600 dark:text-blue-300", ring: "focus:ring-blue-500/50", shadow: "dark:shadow-[0_0_20px_rgba(59,130,246,0.5)]" },
+        { bg: "bg-violet-500/10 dark:bg-violet-500/40", border: "border-violet-500/20 dark:border-violet-500/20", hover: "hover:bg-violet-500/20 dark:bg-violet-400/60", text: "text-violet-600 dark:text-violet-300", ring: "focus:ring-violet-500/50", shadow: "dark:shadow-[0_0_20px_rgba(139,92,246,0.5)]" },
+        { bg: "bg-fuchsia-500/10 dark:bg-fuchsia-500/40", border: "border-fuchsia-500/20 dark:border-fuchsia-500/20", hover: "hover:bg-fuchsia-500/20 dark:bg-fuchsia-400/60", text: "text-fuchsia-600 dark:text-fuchsia-300", ring: "focus:ring-fuchsia-500/50", shadow: "dark:shadow-[0_0_20px_rgba(217,70,239,0.5)]" },
     ]
     const color = colors[index % colors.length]
 
@@ -678,6 +688,7 @@ function LeaderboardCard({
                 className="flex-1 ml-20"
                 colors={color}
                 onOpenChange={handleOpenChange}
+                shadowClassName={color.shadow}
                 drawerContent={
                     <>
                         <motion.div layout className="relative" onClick={(e) => e.stopPropagation()}>
@@ -686,10 +697,14 @@ function LeaderboardCard({
                                 placeholder="Search..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className={`w-full pl-8 pr-3 py-1.5 text-xs bg-background/40 border-none rounded-2xl focus:outline-none focus:ring-2 placeholder:text-muted-foreground/70 ${color.ring}`}
+                                className={cn(
+                                    "w-full pl-8 pr-3 py-1.5 text-xs bg-background/40 border rounded-2xl focus:outline-none focus:ring-2 placeholder:text-muted-foreground/70 transition-colors",
+                                    color.border,
+                                    color.ring
+                                )}
                                 autoFocus
                             />
-                            <Search className="absolute left-2.5 top-1.5 w-3.5 h-3.5 text-muted-foreground" />
+                            <Search className={cn("absolute left-2.5 top-1.5 w-3.5 h-3.5 opacity-60", color.text)} />
                         </motion.div>
 
                         <motion.div layout className="max-h-64 overflow-y-auto space-y-1 scrollbar-none" onClick={(e) => e.stopPropagation()}>

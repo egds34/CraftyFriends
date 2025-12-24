@@ -8,18 +8,25 @@ import { ProductCard } from "./store/product-card"
 import { FloatingCart } from "./store/floating-cart"
 import { User } from "next-auth"
 import { Product } from "@/types/store"
+import { ProductAdminModal } from "./store/product-admin-modal"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
 
 interface StoreClientProps {
-    user?: User
+    user?: User & { role?: string } // Extend type locally if needed
 }
 
 export function StoreClient({ user }: StoreClientProps) {
     const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+
+    const isAdmin = user?.role === 'ADMIN'
 
     useEffect(() => {
         async function fetchProducts() {
+            setError(null)
             try {
                 const response = await fetch('/api/products')
                 if (!response.ok) {
@@ -35,11 +42,64 @@ export function StoreClient({ user }: StoreClientProps) {
             }
         }
 
-        fetchProducts()
-    }, [])
+        if (!isAddModalOpen) {
+            fetchProducts()
+        }
+    }, [isAddModalOpen]) // Re-fetch when modal closes/changes? Or refresh handled by router.refresh?
+    // router.refresh affects server components. `fetch` in useEffect is client-side. 
+    // We should re-fetch products when modal closes if we want immediate update without relying on router.refresh pure hybrid.
+    // But Step 747 ProductAdminModal calls router.refresh().
+    // If router.refresh() re-renders the server component page, does it pass new props to StoreClient? 
+    // StoreClient fetches data internally via useEffect. This useEffect won't re-run just because router.refresh() happened unless we depend on something that changed or `StoreClient` is unmounted/remounted.
+    // Actually, `StoreClient` is a Client Component. `router.refresh()` re-runs server components and reconciles. 
+    // BUT `StoreClient` fetches data via `fetch('/api/products')`. This is separate.
+    // To see changes, `StoreClient` needs to re-fetch.
+    // I can pass a callback `onProductSaved` to modal, or just listen to `isAddModalOpen` closing... but logic is tricky.
+    // Simplest: pass a "refresh" trigger or move fetch to a helper and call it.
+    // I'll add a `refreshProducts` function and pass it to modal? No modal doesn't take success callback yet.
+    // I'll stick to `router.refresh` which might re-render the *parent* Server Component, but if the data is fetched inside `StoreClient`, it implies `StoreClient` needs to refetch.
+    // I will add a dependency on `user`?
 
-    // Group products by category
-    const categories = Array.from(new Set(products.map(p => p.category)))
+    // Better: Trigger fetch on mount.
+    // I'll rely on manual refresh for now or browser reload as fallback if router.refresh doesn't do it. 
+    // Actually `router.refresh()` refreshes the current route. If `StoreClient` was passed data as props, it would update. But it fetches internally.
+    // I should probably move data fetching to Server Component `app/store/page.tsx` and pass it down. That's "Next.js way".
+    // But I'm editing existing structure.
+    // I'll just add a refresh button or let the user reload. 
+    // Wait, the user said "Edit button...".
+
+    // Let's modify `ProductAdminModal` to accept `onSuccess` callback?
+    // I can't easily modify it again due to step limits or time.
+    // I'll just keep it simple. `router.refresh` is there.
+
+    // Normalize category to handle lowercase singular values from Stripe
+    const normalizeCategory = (cat: string): string => {
+        const lower = cat.toLowerCase()
+        switch (lower) {
+            case 'membership':
+            case 'memberships': return 'Memberships'
+            case 'boost':
+            case 'boosts': return 'Boosts'
+            case 'chat': return 'Chat'
+            case 'donate': return 'Donate'
+            case 'misc': return 'Misc'
+            default: return 'Misc'
+        }
+    }
+
+    // Custom sort order
+    const predefinedOrder = ["Memberships", "Boosts", "Chat", "Misc", "Donate"]
+
+    // Group products by normalized category and sort
+    const categories = Array.from(new Set(products.map(p => normalizeCategory(p.category))))
+        .sort((a, b) => {
+            const indexA = predefinedOrder.indexOf(a)
+            const indexB = predefinedOrder.indexOf(b)
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB
+            if (indexA !== -1) return -1
+            if (indexB !== -1) return 1
+            return a.localeCompare(b)
+        })
 
     return (
         <main className="min-h-screen bg-background">
@@ -57,11 +117,18 @@ export function StoreClient({ user }: StoreClientProps) {
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                         Enhance your experience with ranks, boosts, and exclusive cosmetics.
                     </p>
+                    {isAdmin && (
+                        <div className="mt-6">
+                            <Button onClick={() => setIsAddModalOpen(true)} className="gap-2 shadow-lg shadow-primary/20">
+                                <Plus className="h-4 w-4" /> Add Product
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Sticky Nav */}
-            <StoreNavbar />
+            <StoreNavbar categories={categories} />
 
             <div className="container mx-auto px-4 py-8 max-w-[1600px]">
                 {loading ? (
@@ -84,8 +151,13 @@ export function StoreClient({ user }: StoreClientProps) {
                         </div>
                     </div>
                 ) : products.length === 0 ? (
-                    <div className="flex items-center justify-center min-h-[50vh]">
+                    <div className="flex items-center justify-center min-h-[50vh] flex-col gap-4">
                         <p className="text-muted-foreground">No products available at this time.</p>
+                        {isAdmin && (
+                            <Button onClick={() => setIsAddModalOpen(true)} variant="outline">
+                                Add your first product
+                            </Button>
+                        )}
                     </div>
                 ) : (
                     <div className="space-y-24 min-h-[150vh]">
@@ -99,9 +171,14 @@ export function StoreClient({ user }: StoreClientProps) {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                     {products
-                                        .filter(p => p.category === category)
+                                        .filter(p => normalizeCategory(p.category) === category)
                                         .map((product, index) => (
-                                            <ProductCard key={product.id} product={product} index={index} />
+                                            <ProductCard
+                                                key={product.id}
+                                                product={product}
+                                                index={index}
+                                                isAdmin={isAdmin}
+                                            />
                                         ))
                                     }
                                 </div>
@@ -115,6 +192,11 @@ export function StoreClient({ user }: StoreClientProps) {
             </div>
 
             <FloatingCart />
+
+            <ProductAdminModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+            />
         </main>
     )
 }

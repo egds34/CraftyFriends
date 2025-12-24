@@ -15,7 +15,7 @@ export interface SquircleProps extends React.HTMLAttributes<HTMLDivElement> {
 export const Squircle = React.forwardRef<HTMLDivElement, SquircleProps>((
     {
         children,
-        cornerRadius = 20,
+        cornerRadius = 30,
         topLeftRadius,
         topRightRadius,
         bottomLeftRadius,

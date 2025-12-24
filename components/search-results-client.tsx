@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { PillowCard } from "@/components/ui/pillow-card";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { InteractiveHoverBar } from "@/components/ui/interactive-hover-bar"
 
 interface SearchResultsClientProps {
     query: string;
@@ -140,20 +141,21 @@ export function SearchResultsClient({ query, results }: SearchResultsClientProps
                                         contentClassName="flex flex-col p-0 overflow-hidden"
                                     >
                                         <div className="flex-1 relative overflow-hidden">
-                                            <Image
+                                            <motion.img
                                                 src={guide.image}
                                                 alt={guide.title}
-                                                fill
-                                                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                                whileHover={{ scale: 1.1 }}
+                                                transition={{ duration: 0.8, ease: [0.33, 1, 0.68, 1] }}
+                                                className="absolute inset-0 w-full h-full object-cover"
                                             />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 flex flex-col justify-end text-left text-white">
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 flex flex-col justify-end text-left text-white pointer-events-none">
                                                 <h3 className="text-2xl font-bold mb-1">{guide.title}</h3>
                                                 <p className="text-xs text-white/70 line-clamp-2">{guide.description}</p>
                                             </div>
                                         </div>
-                                        <div className="h-12 bg-white/90 dark:bg-slate-100/90 flex items-center justify-center font-bold text-xs uppercase tracking-widest text-muted-foreground group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                                        <InteractiveHoverBar className="h-12 bg-white/90 dark:bg-slate-100/90 font-bold text-xs uppercase tracking-widest text-muted-foreground group-hover:bg-emerald-500 group-hover:text-white transition-all">
                                             View Playbook <ArrowUpRight className="ml-2 w-3 h-3" />
-                                        </div>
+                                        </InteractiveHoverBar>
                                     </PillowCard>
                                 </Link>
                             ))}
