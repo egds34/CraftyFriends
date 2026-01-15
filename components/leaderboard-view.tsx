@@ -263,10 +263,15 @@ function AggregateCard({
     const [isOpen, setIsOpen] = useState(false)
 
     // Random float parameters for organic feel
-    const [floatConfig] = useState(() => ({
-        duration: 3 + Math.random() * 2, // 3-5s duration
-        delay: Math.random() * 2, // 0-2s delay
-    }))
+    // Random float parameters for organic feel
+    const [floatConfig, setFloatConfig] = useState({ duration: 4, delay: 0 })
+
+    useEffect(() => {
+        setFloatConfig({
+            duration: 3 + Math.random() * 2, // 3-5s duration
+            delay: Math.random() * 2, // 0-2s delay
+        })
+    }, [])
 
     const handleOpenChange = (open: boolean) => {
         setIsOpen(open)
@@ -560,17 +565,16 @@ function LeaderboardCard({
     }
 
     // Determine facing direction for head
-    // We want: 
-    // - First item (pos 0): Look Right (towards next item) -> Head turns Left? Let's try -0.5
-    // - Last item: Look Left (towards prev item) -> Head turns Right? Let's try 0.5
-    const [headRotation] = useState(() => {
+    const [headRotation, setHeadRotation] = useState(0)
+
+    useEffect(() => {
         const LOOK_RIGHT = -0.6
         const LOOK_LEFT = 0.6
 
-        if (positionIndex === 0 && !isLastItem) return LOOK_RIGHT
-        if (positionIndex !== 0 && isLastItem) return LOOK_LEFT
-        return Math.random() > 0.5 ? LOOK_RIGHT : LOOK_LEFT
-    })
+        if (positionIndex === 0 && !isLastItem) setHeadRotation(LOOK_RIGHT)
+        else if (positionIndex !== 0 && isLastItem) setHeadRotation(LOOK_LEFT)
+        else setHeadRotation(Math.random() > 0.5 ? LOOK_RIGHT : LOOK_LEFT)
+    }, [positionIndex, isLastItem])
 
     const colors = [
         { bg: "bg-rose-500/10 dark:bg-rose-500/40", border: "border-rose-500/20 dark:border-rose-500/20", hover: "hover:bg-rose-500/20 dark:bg-rose-400/60", text: "text-rose-600 dark:text-rose-300", ring: "focus:ring-rose-500/50", shadow: "dark:shadow-[0_0_20px_rgba(244,63,94,0.5)]" },
