@@ -191,7 +191,7 @@ export function StoreClient({ user }: StoreClientProps) {
                 )}
             </div>
 
-            <FloatingCart />
+            <FloatingCart user={user} />
 
             <ProductAdminModal
                 isOpen={isAddModalOpen}

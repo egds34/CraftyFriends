@@ -41,7 +41,13 @@ export default async function UpdatePage(props: UpdatePageProps) {
                 </div>
             )}
 
-            <UpdateDetailView update={update} />
+            <UpdateDetailView
+                update={{
+                    ...update,
+                    createdAt: 'createdAt' in update ? update.createdAt : (update as any).date,
+                    readTime: update.readTime || '1 min'
+                }}
+            />
         </>
     );
 }

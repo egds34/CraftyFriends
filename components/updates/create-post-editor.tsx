@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { updatePost, createPost } from "@/app/actions/updates";
+import { updatePost, createPost, deletePost } from "@/app/actions/updates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UpdateDetailView } from "@/components/updates/update-detail-view";
 import { useRouter } from "next/navigation";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Image as ImageIcon, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { Post } from "@prisma/client";
+import { ImagePicker } from "@/components/admin/image-picker";
 
 interface CreatePostEditorProps {
     user: any;
@@ -20,7 +21,9 @@ interface CreatePostEditorProps {
 export function CreatePostEditor({ user, initialData, mode = "create" }: CreatePostEditorProps) {
     const router = useRouter();
     const [pending, setPending] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showImagePicker, setShowImagePicker] = useState(false);
 
     const [formState, setFormState] = useState({
         title: initialData?.title || "New Update",
@@ -71,6 +74,27 @@ export function CreatePostEditor({ user, initialData, mode = "create" }: CreateP
         }
     }
 
+    async function handleDelete() {
+        if (!initialData?.id) return;
+
+        if (!confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
+            return;
+        }
+
+        setDeleting(true);
+        setError(null);
+
+        const result = await deletePost(initialData.id);
+
+        if (result.success) {
+            router.push("/updates");
+            router.refresh();
+        } else {
+            setError(result.message || "Failed to delete post");
+            setDeleting(false);
+        }
+    }
+
     // construct preview object
     const previewUpdate = {
         title: formState.title,
@@ -108,7 +132,27 @@ export function CreatePostEditor({ user, initialData, mode = "create" }: CreateP
                         <Button variant="outline" onClick={() => router.back()}>
                             Cancel
                         </Button>
-                        <Button onClick={handleSubmit} disabled={pending} className="min-w-[140px]">
+                        {mode === "edit" && (
+                            <Button
+                                variant="destructive"
+                                onClick={handleDelete}
+                                disabled={deleting || pending}
+                                className="min-w-[120px]"
+                            >
+                                {deleting ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Deleting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Delete
+                                    </>
+                                )}
+                            </Button>
+                        )}
+                        <Button onClick={handleSubmit} disabled={pending || deleting} className="min-w-[140px]">
                             {pending ? (
                                 <>
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -207,17 +251,34 @@ export function CreatePostEditor({ user, initialData, mode = "create" }: CreateP
                                 <div className="space-y-2">
                                     <Label htmlFor="image">Cover Image URL</Label>
                                     <div className="flex gap-2">
-                                        <Input
-                                            id="image"
-                                            name="image"
-                                            value={formState.image}
-                                            onChange={handleChange}
-                                            className="font-mono text-xs"
-                                            placeholder="https://..."
-                                        />
+                                        <div className="relative flex-1">
+                                            <Input
+                                                id="image"
+                                                name="image"
+                                                value={formState.image}
+                                                onChange={handleChange}
+                                                className="font-mono text-xs pr-10"
+                                                placeholder="https://..."
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => setShowImagePicker(true)}
+                                            title="Select from Uploads"
+                                        >
+                                            <ImageIcon className="h-4 w-4" />
+                                        </Button>
                                     </div>
                                     <p className="text-xs text-muted-foreground">Recommended size: 1920x1080 or 16:9 aspect ratio.</p>
                                 </div>
+                                <ImagePicker
+                                    open={showImagePicker}
+                                    onOpenChange={setShowImagePicker}
+                                    folder="postBanner"
+                                    onSelect={(url) => setFormState(prev => ({ ...prev, image: url }))}
+                                />
 
                                 <div className="space-y-2">
                                     <Label htmlFor="content">Main Content (HTML)</Label>

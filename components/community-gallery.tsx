@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight, Image as ImageIcon } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
+import { JellyDots } from "@/components/ui/jelly-dots"
 
 interface CommunityGalleryProps {
     images: string[]
@@ -170,25 +171,15 @@ export function CommunityGallery({ images }: CommunityGalleryProps) {
 
                 {/* Dots Navigation */}
                 {images && images.length > 0 && (
-                    <div className="flex justify-center gap-3 mt-8">
-                        {images.map((_, i) => (
-                            <button
-                                key={i}
-                                onClick={() => handleDotClick(i)}
-                                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${itemsActiveIndex(i)
-                                    ? "bg-primary w-8"
-                                    : "bg-primary/20 hover:bg-primary/40"
-                                    }`}
-                                aria-label={`Go to slide ${i + 1}`}
-                            />
-                        ))}
+                    <div className="flex justify-center mt-8">
+                        <JellyDots
+                            total={images.length}
+                            active={activeIndex}
+                            onDotClick={handleDotClick}
+                        />
                     </div>
                 )}
             </div>
         </section>
     )
-
-    function itemsActiveIndex(i: number) {
-        return i === activeIndex
-    }
 }

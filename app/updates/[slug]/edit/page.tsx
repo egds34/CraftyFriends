@@ -24,6 +24,13 @@ export default async function EditUpdatePage(props: EditUpdatePageProps) {
         notFound();
     }
 
+    // Only allow editing database posts (not static ServerUpdate data)
+    // Check if it has the database-specific fields
+    if (!('createdAt' in post) || !('updatedAt' in post)) {
+        // This is static data, redirect to view
+        redirect(`/updates/${params.slug}`);
+    }
+
     // We pass the user and the post data to the editor
     return <CreatePostEditor user={session.user} initialData={post} mode="edit" />;
 }

@@ -347,7 +347,6 @@ export async function POST(req: Request) {
 
             console.log(`[WEBHOOK] Product ${event.type} SUCCESS: ${product.name}`)
             revalidatePath('/store')
-            revalidateTag('products')
         }
 
     } catch (error: any) {

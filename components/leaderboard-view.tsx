@@ -11,6 +11,7 @@ import { PlayerProfileModal } from "@/components/player-profile-modal"
 import { SignInModal } from "@/components/sign-in-modal"
 import { cn } from "@/lib/utils"
 import { JellyTabs } from "@/components/ui/jelly-tabs"
+import { JellyDots } from "@/components/ui/jelly-dots"
 
 export function LeaderboardView({
     isAuthenticated = false,
@@ -210,13 +211,12 @@ function AggregateSection({ title, stats, onPlayerClick }: { title: string, stat
                     </AnimatePresence>
 
                     {/* Pagination Dots */}
-                    <div className="flex gap-2 justify-center mt-6">
-                        {stats.map((_, i) => (
-                            <div
-                                key={i}
-                                className={`h-2 w-2 rounded-full transition-colors duration-300 ${i === activeIndex ? 'bg-indigo-500' : 'bg-indigo-500/20'}`}
-                            />
-                        ))}
+                    <div className="flex justify-center mt-6">
+                        <JellyDots
+                            total={stats.length}
+                            active={activeIndex}
+                            onDotClick={setActiveIndex}
+                        />
                     </div>
                 </div>
             ) : (
@@ -499,17 +499,15 @@ function CyclingSection({ title, stats, onPlayerClick }: { title: string, stats:
             </motion.div>
 
             {totalPages > 1 && (
-                <div className="flex gap-2 justify-center mt-8">
-                    {Array.from({ length: totalPages }).map((_, i) => (
-                        <div
-                            key={i}
-                            onClick={() => {
-                                setPageIndex(i)
-                                setLastInteraction(Date.now())
-                            }}
-                            className={`h-2 w-2 rounded-full transition-colors duration-300 cursor-pointer ${i === pageIndex ? 'bg-indigo-500' : 'bg-indigo-500/20 hover:bg-indigo-500/40'}`}
-                        />
-                    ))}
+                <div className="flex justify-center mt-8">
+                    <JellyDots
+                        total={totalPages}
+                        active={pageIndex}
+                        onDotClick={(index) => {
+                            setPageIndex(index)
+                            setLastInteraction(Date.now())
+                        }}
+                    />
                 </div>
             )}
         </div>

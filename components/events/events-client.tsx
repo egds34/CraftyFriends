@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Event, EventType, Role } from "@prisma/client"
 import { motion, AnimatePresence } from "framer-motion"
 import { format, addDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, getDay, parseISO } from "date-fns"
-import { ChevronLeft, ChevronRight, Plus, Trash2, Calendar as CalendarIcon, Clock, ArrowUpRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus, Trash2, Calendar as CalendarIcon, Clock, ArrowUpRight, Image as ImageIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"
@@ -14,6 +14,7 @@ import { PillowCard, PillowButton } from "@/components/ui/pillow-card"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { JellyTabs } from "@/components/ui/jelly-tabs"
+import { ImagePicker } from "@/components/admin/image-picker"
 
 interface EventsClientProps {
     initialEvents: Event[]
@@ -861,8 +862,10 @@ function ManageTemplatesForm({ templates, onSuccess }: { templates: any[], onSuc
     const [shadowColor, setShadowColor] = useState(COLOR_PRESETS[0].shadow)
     const [hoverColor, setHoverColor] = useState(COLOR_PRESETS[0].hover)
     const [howTo, setHowTo] = useState<string[]>([""])
+
     const [rules, setRules] = useState<string[]>([""])
     const [loading, setLoading] = useState(false)
+    const [showImagePicker, setShowImagePicker] = useState(false)
 
     useEffect(() => {
         if (selectedId && selectedId !== "NEW") {
@@ -951,7 +954,24 @@ function ManageTemplatesForm({ templates, onSuccess }: { templates: any[], onSuc
 
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Image URL (Blob Storage or /images/...)</label>
-                        <input className="w-full bg-background border px-3 py-2 rounded-md text-black" required value={image} onChange={e => setImage(e.target.value)} placeholder="https://... or /images/events/spleef.png" />
+                        <div className="flex gap-2">
+                            <input className="flex-1 bg-background border px-3 py-2 rounded-md text-black" required value={image} onChange={e => setImage(e.target.value)} placeholder="https://... or /images/events/spleef.png" />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setShowImagePicker(true)}
+                                title="Select from Uploads"
+                            >
+                                <ImageIcon className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <ImagePicker
+                            open={showImagePicker}
+                            onOpenChange={setShowImagePicker}
+                            folder="events"
+                            onSelect={(url) => setImage(url)}
+                        />
                     </div>
 
                     <div className="space-y-2">

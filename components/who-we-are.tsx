@@ -13,7 +13,7 @@ export function WhoWeAre() {
                     transition={{ duration: 0.6 }}
                     className="text-center space-y-8"
                 >
-                    <h2 className="text-3xl md:text-5xl font-heading font-extrabold text-primary tracking-tight">
+                    <h2 className="text-3xl md:text-5xl font-heading font-extrabold text-foreground tracking-tight">
                         Who We Are
                     </h2>
 

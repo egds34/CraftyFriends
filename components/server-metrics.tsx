@@ -367,7 +367,7 @@ export function ServerMetrics() {
                     viewport={{ once: true }}
                     className="mb-16 text-center"
                 >
-                    <h2 className="text-4xl md:text-6xl font-heading font-black text-primary mb-6 tracking-tight drop-shadow-sm">
+                    <h2 className="text-3xl md:text-5xl font-heading font-extrabold text-foreground mb-6 tracking-tight drop-shadow-sm">
                         Server Vitals
                     </h2>
 

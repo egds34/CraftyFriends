@@ -7,16 +7,28 @@ import { AnimatePresence, motion } from "framer-motion"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { ErrorModal } from "../error-modal"
+import { User } from "next-auth"
+import { SignInModal } from "@/components/sign-in-modal"
 
-export function FloatingCart() {
+interface FloatingCartProps {
+    user?: User
+}
+
+export function FloatingCart({ user }: FloatingCartProps) {
     const { items, removeFromCart, total, isLoaded } = useCart()
     const [isOpen, setIsOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [isSignInOpen, setIsSignInOpen] = useState(false)
 
     if (!isLoaded) return null
 
     const handleCheckout = async () => {
+        if (!user) {
+            setIsSignInOpen(true)
+            return
+        }
+
         try {
             setIsLoading(true)
             const response = await fetch('/api/stripe/checkout', {
@@ -203,6 +215,11 @@ export function FloatingCart() {
                 isOpen={!!error}
                 onClose={() => setError(null)}
                 message={error || ""}
+            />
+
+            <SignInModal
+                isOpen={isSignInOpen}
+                onClose={() => setIsSignInOpen(false)}
             />
         </div>
     )

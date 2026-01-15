@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion, useScroll, useTransform, useAnimation } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { JellyButton } from "@/components/ui/jelly-button"
 import { HeroBackground } from "@/components/hero-background"
 import { GetStartedButton } from "@/components/get-started-button"
 import { User } from "next-auth"
@@ -120,7 +121,7 @@ export function LandingPage({ bannerImages, user, communityImages, votingSites, 
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ duration: 0.5 }}
-                                className="text-4xl font-heading font-extrabold tracking-tighter sm:text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 leading-tight"
+                                className="text-4xl font-heading font-extrabold tracking-tighter sm:text-5xl md:text-6xl text-foreground leading-tight"
                             >
                                 Crafty Friends Minecraft Server!
                             </motion.h1>
@@ -139,10 +140,10 @@ export function LandingPage({ bannerImages, user, communityImages, votingSites, 
                                 className="flex gap-4 justify-center md:justify-center w-full"
                             >
                                 <GetStartedButton user={user} />
-                                <Button
+                                <JellyButton
                                     size="lg"
                                     variant="outline"
-                                    className="bg-background/50 hover:bg-background/70 border-white/20 text-white backdrop-blur-sm"
+                                    className="bg-background/50 hover:bg-background/70 border-white/20 text-white backdrop-blur-sm border-2"
                                     onClick={(e) => {
                                         e.preventDefault()
                                         // Scroll to just past the hero section
@@ -153,7 +154,7 @@ export function LandingPage({ bannerImages, user, communityImages, votingSites, 
                                     }}
                                 >
                                     Learn More
-                                </Button>
+                                </JellyButton>
                             </motion.div>
                         </div>
                     </div>

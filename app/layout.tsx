@@ -39,6 +39,7 @@ import Navbar from "@/components/navbar";
 import { auth } from "@/auth";
 import { AccountCompletionModal } from "@/components/account-completion-modal";
 
+
 // ... existing imports
 
 export default async function RootLayout({

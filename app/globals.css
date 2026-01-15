@@ -54,19 +54,19 @@
   --popover-foreground: oklch(0.145 0 0);
 
   /* Primary: Vibrant Juicy Grape */
-  --primary: oklch(0.205 0 0);
+  --primary: oklch(0.45 0.18 280);
   --primary-foreground: oklch(0.985 0 0);
 
   /* Secondary: Soft Lilac Foam */
-  --secondary: oklch(0.97 0 0);
+  --secondary: oklch(0.96 0.02 280);
   --secondary-foreground: oklch(0.205 0 0);
 
   /* Muted: Grayish Purple */
-  --muted: oklch(0.97 0 0);
+  --muted: oklch(0.96 0.01 280);
   --muted-foreground: oklch(0.556 0 0);
 
   /* Accent: Fresh Grape Leaf Green */
-  --accent: oklch(0.97 0 0);
+  --accent: oklch(0.96 0.02 280);
   --accent-foreground: oklch(0.205 0 0);
 
   /* Destructive: Soft Raspberry */
@@ -76,7 +76,7 @@
   /* Border & Input: Soft Lavender lines */
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: oklch(0.45 0.18 280);
 
   /* Radius: Extra Bubbly */
   --radius: 0.625rem;
@@ -89,12 +89,12 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary: oklch(0.45 0.18 280);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: oklch(0.45 0.18 280);
 }
 
 .dark {
@@ -107,25 +107,25 @@
   --foreground: oklch(0.985 0 0);
 
   /* Card: Rich Dark Grape */
-  --card: oklch(0.205 0 0);
+  --card: oklch(0.18 0.04 290);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.18 0.04 290);
   --popover-foreground: oklch(0.985 0 0);
 
   /* Primary: Bright Neon Grape */
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.6 0.18 280);
+  --primary-foreground: oklch(1 0 0);
 
   /* Secondary: Deep Velvet Purple */
-  --secondary: oklch(0.269 0 0);
+  --secondary: oklch(0.25 0.06 280);
   --secondary-foreground: oklch(0.985 0 0);
 
   /* Muted: Darkened Lilac */
-  --muted: oklch(0.269 0 0);
+  --muted: oklch(0.25 0.06 280);
   --muted-foreground: oklch(0.708 0 0);
 
   /* Accent: Darker Leaf Green */
-  --accent: oklch(0.269 0 0);
+  --accent: oklch(0.25 0.06 280);
   --accent-foreground: oklch(0.985 0 0);
 
   /* Destructive: Muted Raspberry */

@@ -43,7 +43,6 @@ export async function createStripeProduct(data: ProductFormData) {
         })
 
         revalidatePath('/store')
-        revalidateTag("products")
         return { success: true, productId: product.id }
     } catch (error: any) {
         console.error("Stripe Create Error:", error)
@@ -87,7 +86,6 @@ export async function updateStripeProduct(productId: string, priceId: string | u
         })
 
         revalidatePath('/store')
-        revalidateTag("products")
         return { success: true }
     } catch (error: any) {
         console.error("Stripe Update Error:", error)
@@ -104,7 +102,6 @@ export async function deleteStripeProduct(productId: string) {
     try {
         await stripe.products.update(productId, { active: false })
         revalidatePath('/store')
-        revalidateTag("products")
         return { success: true }
     } catch (error: any) {
         return { success: false, error: error.message }

@@ -22,7 +22,7 @@ export function VotingSection({ sites }: VotingSectionProps) {
         <section className="py-20 relative z-10">
             <div className="container px-4 mx-auto text-center">
                 <div className="flex flex-col items-center justify-center mb-12">
-                    <h2 className="text-3xl md:text-5xl font-heading font-extrabold mb-4 text-primary tracking-tight">Vote for Us!</h2>
+                    <h2 className="text-3xl md:text-5xl font-heading font-extrabold mb-4 text-foreground tracking-tight">Vote for Us!</h2>
                     <p className="text-muted-foreground max-w-2xl text-lg">
                         Earn unique items when you vote for us!
                     </p>

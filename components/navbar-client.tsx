@@ -112,7 +112,7 @@ export function NavbarClient({ sessionUser, blueMapUrl }: NavbarClientProps) {
                             { href: "/updates", label: "Updates", icon: Newspaper },
                             { href: "/events", label: "Events", icon: CalendarDays },
                             { href: "/leaderboard", label: "Leaderboard", icon: BarChart3 },
-                            ...(blueMapUrl ? [{ href: blueMapUrl, label: "BlueMap", icon: MapIcon }] : []),
+                            ...(blueMapUrl ? [{ href: "/map", label: "BlueMap", icon: MapIcon }] : []),
                         ].map((link) => {
                             const isActive = pathname.startsWith(link.href)
                             const Icon = link.icon

@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { Role } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { updatesData } from "@/lib/updates-data";
 
 const createPostSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -158,8 +159,36 @@ export async function getUpdateById(id: string) {
         const post = await prisma.post.findUnique({
             where: { id }
         });
-        return post;
+
+        if (post) return post; // Return DB post if found
+
+        // Fallback to static data
+        const staticPost = updatesData.find(u => u.id === id);
+        return staticPost || null;
+
     } catch (error) {
-        return null;
+        // Fallback to static data even on DB error
+        const staticPost = updatesData.find(u => u.id === id);
+        return staticPost || null;
+    }
+}
+
+export async function deletePost(postId: string) {
+    const session = await auth();
+
+    if (!session?.user || session.user.role !== Role.ADMIN) {
+        return { success: false, message: "Unauthorized: Admins only" };
+    }
+
+    try {
+        await prisma.post.delete({
+            where: { id: postId }
+        });
+
+        revalidatePath("/updates");
+        return { success: true, message: "Post deleted successfully" };
+    } catch (error) {
+        console.error("Failed to delete post:", error);
+        return { success: false, message: "Failed to delete post" };
     }
 }

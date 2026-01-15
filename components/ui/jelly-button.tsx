@@ -4,7 +4,7 @@ import { motion, useAnimationControls } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { ButtonHTMLAttributes, ReactNode } from "react"
 
-interface JellyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface JellyButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onDrag" | "onDragStart" | "onDragEnd" | "onAnimationStart" | "ref"> {
     children: ReactNode
     variant?: "primary" | "secondary" | "outline"
     size?: "sm" | "md" | "lg"

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, Clock, User, ArrowUpRight, Loader2 } from "lucide-react";
 import { PillowCard } from "@/components/ui/pillow-card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getUpdates } from "@/app/actions/updates";
 import { Button } from "@/components/ui/button";
 import { InteractiveHoverBar } from "@/components/ui/interactive-hover-bar";
@@ -24,18 +24,28 @@ interface UpdatesGridProps {
 
 export function UpdatesGrid({ initialUpdates, canCreate, showSearch = true }: UpdatesGridProps) {
     const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
     const [mobileVisibleCount, setMobileVisibleCount] = useState(5);
+
+    // Debounce search query
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+        }, 150);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     // Filter updates based on search
     const filteredUpdates = initialUpdates.filter(update =>
-        update.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        update.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        update.category.toLowerCase().includes(searchQuery.toLowerCase())
+        update.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        update.excerpt.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        update.category.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
     );
 
     // Desktop: Split into Featured and Paginated (Only if NOT SEARCHING)
     const featuredUpdates = !searchQuery ? filteredUpdates.slice(0, 3) : [];
-    const remainingUpdates = !searchQuery ? filteredUpdates.slice(3) : [];
+    // Limit to max 5 pages (20 items)
+    const remainingUpdates = !searchQuery ? filteredUpdates.slice(3, 23) : [];
 
     // Desktop Pagination State (Only used for non-search mode)
     const [currentPage, setCurrentPage] = useState(0);
@@ -97,8 +107,8 @@ export function UpdatesGrid({ initialUpdates, canCreate, showSearch = true }: Up
                             className="w-full bg-muted/40 dark:bg-muted/60 border-2 border-border dark:border-border/80 rounded-full px-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium placeholder:text-muted-foreground"
                         />
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                            <Loader2 className={cn("w-4 h-4 animate-spin", !searchQuery && "hidden")} />
-                            {!searchQuery && <div className="w-4 h-4 bg-primary/20 rounded-full" />}
+                            <Loader2 className={cn("w-4 h-4 animate-spin", (searchQuery === debouncedSearchQuery || !searchQuery) && "hidden")} />
+                            {(searchQuery === debouncedSearchQuery || !searchQuery) && <div className="w-4 h-4 bg-primary/20 rounded-full" />}
                         </div>
                     </div>
                 </div>
@@ -117,18 +127,21 @@ export function UpdatesGrid({ initialUpdates, canCreate, showSearch = true }: Up
                 {searchQuery && filteredUpdates.length > 0 && (
                     <div className="space-y-8">
                         <motion.div
+                            layout
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 auto-rows-[300px]"
                         >
-                            {filteredUpdates.map((update, idx) => (
-                                <UpdateCard
-                                    key={update.id}
-                                    update={update}
-                                    idx={idx}
-                                    spanClasses="col-span-1 row-span-1"
-                                />
-                            ))}
+                            <AnimatePresence mode="popLayout">
+                                {filteredUpdates.map((update, idx) => (
+                                    <UpdateCard
+                                        key={update.id}
+                                        update={update}
+                                        idx={idx}
+                                        spanClasses="col-span-1 row-span-1"
+                                    />
+                                ))}
+                            </AnimatePresence>
                         </motion.div>
                     </div>
                 )}
@@ -172,36 +185,33 @@ export function UpdatesGrid({ initialUpdates, canCreate, showSearch = true }: Up
                         {/* 3. Paginated Bento Grid */}
                         {remainingUpdates.length > 0 && (
                             <div className="space-y-8">
-                                <AnimatePresence mode="wait">
-                                    <motion.div
-                                        key={currentPage}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        transition={{ duration: 0.2, ease: "easeInOut" }}
-                                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 auto-rows-[300px]"
-                                    >
-                                        {Array.from({ length: 4 }).map((_, idx) => {
-                                            const update = currentPaginatedUpdates[idx];
-                                            const spanClass = getPaginatedSpan(idx, currentPage, currentPaginatedUpdates.length);
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 auto-rows-[300px] grid-flow-dense"
+                                >
+                                    {Array.from({ length: 4 }).map((_, idx) => {
+                                        const update = currentPaginatedUpdates[idx];
+                                        const spanClass = getPaginatedSpan(idx, currentPage, currentPaginatedUpdates.length);
+                                        console.log(`Slot ${idx}:`, { update: update?.id, spanClass });
 
-                                            if (update) {
-                                                return (
-                                                    <UpdateCard
-                                                        key={update.id}
-                                                        update={update}
-                                                        idx={idx}
-                                                        spanClasses={spanClass}
-                                                    />
-                                                );
-                                            } else {
-                                                return (
-                                                    <div key={`placeholder-${idx}`} className={cn("invisible", spanClass)} aria-hidden="true" />
-                                                );
-                                            }
-                                        })}
-                                    </motion.div>
-                                </AnimatePresence>
+                                        if (update) {
+                                            return (
+                                                <UpdateCard
+                                                    key={update.id}
+                                                    update={update}
+                                                    idx={idx}
+                                                    spanClasses={spanClass}
+                                                />
+                                            );
+                                        } else {
+                                            return (
+                                                <div key={`placeholder-${idx}`} className={cn("invisible", spanClass)} aria-hidden="true" />
+                                            );
+                                        }
+                                    })}
+                                </motion.div>
 
                                 {/* Pagination Controls */}
                                 {totalPages > 1 && (
@@ -318,16 +328,20 @@ function getCategoryStyles(category: string) {
 function UpdateCard({ update, idx, spanClasses, isFeatured = false }: { update: ServerUpdate, idx: number, spanClasses: string, isFeatured?: boolean }) {
     const styles = getCategoryStyles(update.category);
     const [isHovering, setIsHovering] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     return (
         <motion.div
+            layout
             key={update.id}
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            viewport={{ once: false }}
             transition={{
-                type: "spring",
-                stiffness: 100,
-                damping: 15,
+                layout: { duration: 0.2, ease: "easeOut" },
+                opacity: { duration: 0.15 },
+                scale: { duration: 0.15 }
             }}
             className={cn("group relative", spanClasses)}
             onMouseEnter={() => setIsHovering(true)}
@@ -346,12 +360,17 @@ function UpdateCard({ update, idx, spanClasses, isFeatured = false }: { update: 
                             animate={{ scale: isHovering ? 1.1 : 1 }}
                             transition={{ duration: 0.8, ease: [0.33, 1, 0.68, 1] }} // Smooth easeOutExpo
                         >
-                            <Image
-                                src={update.image}
-                                alt={update.title}
-                                fill
-                                className="object-cover opacity-80 dark:opacity-70"
-                            />
+                            {!imageError ? (
+                                <Image
+                                    src={update.image}
+                                    alt={update.title}
+                                    fill
+                                    className="object-cover opacity-80 dark:opacity-70"
+                                    onError={() => setImageError(true)}
+                                />
+                            ) : (
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-primary/60 to-primary/80" />
+                            )}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
                         </motion.div>
                     </div>

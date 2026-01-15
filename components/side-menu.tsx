@@ -92,9 +92,7 @@ export function SideMenu({ blueMapUrl, children }: SideMenuProps) {
 
                             {blueMapUrl && (
                                 <Link
-                                    href={blueMapUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    href="/map"
                                     className={cn(
                                         "flex items-center gap-3 p-3 rounded-md transition-colors group",
                                         pathname.startsWith("/map") ? "bg-accent" : "hover:bg-accent"

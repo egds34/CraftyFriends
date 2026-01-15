@@ -9,7 +9,8 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+// Omit conflicting handlers that exist in both HTMLButtonElement and Framer Motion but with different signatures
+interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onDrag" | "onDragStart" | "onDragEnd" | "onAnimationStart" | "ref"> {
     variant?: "default" | "outline" | "ghost" | "premium" | "destructive"
     size?: "default" | "sm" | "lg" | "icon"
 }
